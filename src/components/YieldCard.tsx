@@ -66,7 +66,7 @@ export function YieldCard({
       <CardContent className="p-4 pt-2">
         <p className="text-sm text-muted-foreground">Sold by <span className="font-semibold text-foreground">{farmer}</span></p>
         <div className="mt-2 text-xl font-bold text-primary">
-          ${price.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">/ {unit}</span>
+          ₹{price.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">/ {unit}</span>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">

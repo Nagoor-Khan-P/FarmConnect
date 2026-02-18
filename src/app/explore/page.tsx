@@ -19,15 +19,15 @@ import { Filter, Search as SearchIcon, X } from "lucide-react";
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [priceRange, setPriceRange] = useState([0, 100]);
+  const [priceRange, setPriceRange] = useState([0, 1500]);
 
   const allYields = [
     {
       id: "y1",
       name: "Crisp Orchard Apples",
       category: "Fruits",
-      price: 4.50,
-      unit: "lb",
+      price: 180.00,
+      unit: "kg",
       farmer: "Sarah Jenkins",
       location: "Oak Ridge Farms",
       rating: 4.8,
@@ -38,7 +38,7 @@ export default function ExplorePage() {
       id: "y2",
       name: "Wildflower Honey",
       category: "Pantry",
-      price: 12.00,
+      price: 650.00,
       unit: "jar",
       farmer: "Ben's Bees",
       location: "Valley Meadows",
@@ -50,7 +50,7 @@ export default function ExplorePage() {
       id: "y3",
       name: "Organic Heirloom Carrots",
       category: "Vegetables",
-      price: 3.25,
+      price: 120.00,
       unit: "bunch",
       farmer: "Organic Roots",
       location: "Green Glade",
@@ -62,7 +62,7 @@ export default function ExplorePage() {
       id: "y4",
       name: "Farm Fresh Large Eggs",
       category: "Dairy & Eggs",
-      price: 5.50,
+      price: 95.00,
       unit: "dozen",
       farmer: "Sunny Side Poultry",
       location: "East Hills",
@@ -74,7 +74,7 @@ export default function ExplorePage() {
       id: "y5",
       name: "Artisanal Sourdough",
       category: "Bakery",
-      price: 7.00,
+      price: 240.00,
       unit: "loaf",
       farmer: "Golden Grains",
       location: "Valley Meadows",
@@ -86,7 +86,7 @@ export default function ExplorePage() {
       id: "y6",
       name: "Grass-Fed Butter",
       category: "Dairy & Eggs",
-      price: 8.50,
+      price: 450.00,
       unit: "block",
       farmer: "Happy Cows Dairy",
       location: "North Fields",
@@ -132,12 +132,12 @@ export default function ExplorePage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <label className="text-sm font-semibold">Price Range</label>
-                    <span className="text-xs text-muted-foreground">${priceRange[0]} - ${priceRange[1]}</span>
+                    <span className="text-xs text-muted-foreground">₹{priceRange[0]} - ₹{priceRange[1]}</span>
                   </div>
                   <Slider 
-                    defaultValue={[0, 100]} 
-                    max={100} 
-                    step={1} 
+                    defaultValue={[0, 1500]} 
+                    max={2000} 
+                    step={10} 
                     onValueChange={setPriceRange}
                     className="py-4"
                   />
@@ -160,7 +160,11 @@ export default function ExplorePage() {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full gap-2 border-primary text-primary hover:bg-primary/10">
+            <Button 
+              variant="outline" 
+              className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
+              onClick={() => {setSearchQuery(""); setPriceRange([0, 1500]);}}
+            >
               <X className="h-4 w-4" /> Reset Filters
             </Button>
           </aside>
@@ -195,7 +199,7 @@ export default function ExplorePage() {
                   </div>
                   <h3 className="text-xl font-bold font-headline">No yields found</h3>
                   <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
-                  <Button onClick={() => {setSearchQuery(""); setPriceRange([0, 100]);}}>Clear All Filters</Button>
+                  <Button onClick={() => {setSearchQuery(""); setPriceRange([0, 1500]);}}>Clear All Filters</Button>
                 </div>
               )}
             </div>

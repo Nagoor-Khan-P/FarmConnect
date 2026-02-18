@@ -5,7 +5,6 @@ import { Navbar } from "@/components/Navbar";
 import { YieldCard } from "@/components/YieldCard";
 import { AiRecommendations } from "@/components/AiRecommendations";
 import { Button } from "@/components/ui/button";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Sprout, Users, Truck, ShieldCheck, ArrowRight, Leaf } from "lucide-react";
 
 export default function Home() {
@@ -14,8 +13,8 @@ export default function Home() {
       id: "y1",
       name: "Crisp Orchard Apples",
       category: "Fruits",
-      price: 4.50,
-      unit: "lb",
+      price: 180.00,
+      unit: "kg",
       farmer: "Sarah Jenkins",
       location: "Oak Ridge Farms",
       rating: 4.8,
@@ -26,7 +25,7 @@ export default function Home() {
       id: "y2",
       name: "Wildflower Honey",
       category: "Pantry",
-      price: 12.00,
+      price: 650.00,
       unit: "jar",
       farmer: "Ben's Bees",
       location: "Valley Meadows",
@@ -38,7 +37,7 @@ export default function Home() {
       id: "y3",
       name: "Organic Heirloom Carrots",
       category: "Vegetables",
-      price: 3.25,
+      price: 120.00,
       unit: "bunch",
       farmer: "Organic Roots",
       location: "Green Glade",
@@ -50,7 +49,7 @@ export default function Home() {
       id: "y4",
       name: "Farm Fresh Large Eggs",
       category: "Dairy & Eggs",
-      price: 5.50,
+      price: 95.00,
       unit: "dozen",
       farmer: "Sunny Side Poultry",
       location: "East Hills",
