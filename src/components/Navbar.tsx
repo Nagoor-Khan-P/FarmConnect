@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Leaf, Search, ShoppingBag, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,8 +11,17 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
+  const pathname = usePathname();
+
+  const navLinks = [
+    { href: "/explore", label: "Explore Yields" },
+    { href: "/farmers", label: "Meet Farmers" },
+    { href: "/about", label: "Our Mission" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 flex h-16 items-center justify-between gap-4">
@@ -23,16 +33,27 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Desktop Navigation - Hidden on medium and smaller screens */}
+        {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
-          <Link href="/explore" className="hover:text-primary transition-colors whitespace-nowrap">Explore Yields</Link>
-          <Link href="/farmers" className="hover:text-primary transition-colors whitespace-nowrap">Meet Farmers</Link>
-          <Link href="/about" className="hover:text-primary transition-colors whitespace-nowrap">Our Mission</Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "transition-colors hover:text-primary whitespace-nowrap",
+                pathname === link.href 
+                  ? "text-primary font-bold border-b-2 border-primary pt-1" 
+                  : "text-muted-foreground"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Actions Section */}
         <div className="flex items-center gap-2 sm:gap-4 ml-auto">
-          {/* Search Bar - Hidden on small screens, shown on medium+ */}
+          {/* Search Bar */}
           <div className="relative hidden md:block shrink">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
@@ -44,26 +65,26 @@ export function Navbar() {
           
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative shrink-0">
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingBag className={cn("h-5 w-5", pathname === "/cart" && "text-primary")} />
               <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-secondary text-[10px] font-bold flex items-center justify-center text-white">0</span>
             </Button>
           </Link>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="rounded-full shrink-0">
-                <User className="h-5 w-5" />
+              <Button variant="outline" size="icon" className={cn("rounded-full shrink-0", pathname.startsWith("/dashboard") && "border-primary")}>
+                <User className={cn("h-5 w-5", pathname.startsWith("/dashboard") && "text-primary")} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href="/dashboard">Dashboard</Link>
+                <Link href="/dashboard" className={cn(pathname === "/dashboard" && "font-bold text-primary")}>Dashboard</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/auth/register">Sign Up</Link>
+                <Link href="/auth/register" className={cn(pathname === "/auth/register" && "font-bold text-primary")}>Sign Up</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/farmer/register">Register as Farmer</Link>
+                <Link href="/farmer/register" className={cn(pathname === "/farmer/register" && "font-bold text-primary")}>Register as Farmer</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
