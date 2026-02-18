@@ -42,7 +42,7 @@ export function Navbar() {
               className={cn(
                 "transition-colors hover:text-primary whitespace-nowrap",
                 pathname === link.href 
-                  ? "text-primary font-bold border-b-2 border-primary pt-1" 
+                  ? "text-primary font-bold" 
                   : "text-muted-foreground"
               )}
             >
