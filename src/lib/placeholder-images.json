@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-farm",
+      "description": "Beautiful green farm landscape",
+      "imageUrl": "https://images.unsplash.com/photo-1754467757901-cb098db061a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxsdXNoJTIwZ3JlZW4lMjBmYXJtJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3MTQwMjM1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lush green farm landscape"
+    },
+    {
+      "id": "organic-apples",
+      "description": "Fresh organic red apples",
+      "imageUrl": "https://images.unsplash.com/photo-1639042401386-91cd5a6d1ff9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmcmVzaCUyMHJlZCUyMGFwcGxlc3xlbnwwfHx8fDE3NzE0MDIzNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fresh red apples"
+    },
+    {
+      "id": "honey",
+      "description": "Pure farm honey jars",
+      "imageUrl": "https://images.unsplash.com/photo-1761416351532-ede97c29fab8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxob25leSUyMGphcnN8ZW58MHx8fHwxNzcxNDAyMzU2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "honey jars"
+    },
+    {
+      "id": "wheat",
+      "description": "Golden wheat field",
+      "imageUrl": "https://images.unsplash.com/photo-1627841849651-2f80be5db524?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxnb2xkZW4lMjB3aGVhdHxlbnwwfHx8fDE3NzE0MDIzNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "golden wheat"
+    },
+    {
+      "id": "milk",
+      "description": "Fresh farm milk bottle",
+      "imageUrl": "https://images.unsplash.com/photo-1553532070-9f677c9df3dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmYXJtJTIwZnJlc2glMjBtaWxrfGVufDB8fHx8MTc3MTQwMjM1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "farm fresh milk"
+    },
+    {
+      "id": "farmer1",
+      "description": "Friendly local farmer",
+      "imageUrl": "https://images.unsplash.com/photo-1715443973706-1dcbc81c6a93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzbWlsaW5nJTIwZmFybWVyfGVufDB8fHx8MTc3MTM0NDc3M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "smiling farmer"
+    },
+    {
+      "id": "farmer2",
+      "description": "Experienced organic farmer",
+      "imageUrl": "https://images.unsplash.com/photo-1757812672081-1d255025e014?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvcmdhbmljJTIwZmFybWVyfGVufDB8fHx8MTc3MTQwMjM1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "organic farmer"
+    }
+  ]
 }
