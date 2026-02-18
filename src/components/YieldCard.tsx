@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Star, MapPin } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface YieldCardProps {
   id: string;
@@ -33,6 +35,17 @@ export function YieldCard({
   image,
   imageHint
 }: YieldCardProps) {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = () => {
+    addToCart({ id, name, price, image, unit, farmer });
+    toast({
+      title: "Added to basket",
+      description: `${name} has been added to your shopping basket.`,
+    });
+  };
+
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-card/50 flex flex-col h-full">
       <Link href={`/yields/${id}`}>
@@ -70,7 +83,10 @@ export function YieldCard({
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
-        <Button className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+        <Button 
+          onClick={handleAddToCart}
+          className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+        >
           <ShoppingBag className="h-4 w-4" /> Add to Basket
         </Button>
       </CardFooter>

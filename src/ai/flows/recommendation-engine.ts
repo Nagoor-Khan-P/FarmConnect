@@ -29,7 +29,7 @@ const YieldAndFarmerRecommendationsInputSchema = z.object({
       category: z.string().describe('The category of the browsed yield (e.g., "fruits", "vegetables").'),
     })
   ).describe('A list of yields the user has recently viewed.').default([]),
-  preferences: z.array(z.string()).describe('A list of the user\'s stated preferences (e.g., "organic", "local produce", "berries").').default([]),
+  preferences: z.array(z.string()).describe('A list of the user\'s stated preferences (e.g., "organic", "fresh", "local").').default([]),
 });
 export type YieldAndFarmerRecommendationsInput = z.infer<typeof YieldAndFarmerRecommendationsInputSchema>;
 
@@ -39,6 +39,10 @@ const YieldAndFarmerRecommendationsOutputSchema = z.object({
       yieldId: z.string().describe('The ID of the recommended yield.'),
       yieldName: z.string().describe('The name of the recommended yield.'),
       category: z.string().describe('The category of the recommended yield.'),
+      price: z.number().describe('The price of the yield in INR.'),
+      unit: z.string().describe('The unit (e.g., kg, dozen, jar).'),
+      farmer: z.string().describe('The farmer name.'),
+      image: z.string().describe('A placeholder image URL from picsum.photos.'),
       reason: z.string().describe('A brief explanation for why this yield is recommended.'),
     })
   ).describe('A list of recommended farm yields based on user data.').default([]),
@@ -94,7 +98,15 @@ User Preferences:
   No specific preferences stated.
 {{/if}}
 
-Based on the provided information, recommend up to 5 farm yields and up to 3 farmers that the user might be interested in. For each recommendation, provide a brief, clear reason. Ensure the recommendations are diverse but relevant.`,
+Based on the provided information, recommend up to 5 farm yields and up to 3 farmers that the user might be interested in. For each recommendation, provide a brief, clear reason. 
+
+For each recommended yield, provide:
+1. Realistic price in INR (between 50 and 1000).
+2. Appropriate unit (kg, bunch, jar, dozen).
+3. A likely farmer name.
+4. A picsum.photos image URL like https://picsum.photos/seed/<random>/400/300.
+
+Ensure the recommendations are diverse but relevant.`,
 });
 
 const yieldAndFarmerRecommendationsFlow = ai.defineFlow(

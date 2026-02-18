@@ -1,25 +1,42 @@
-
-"use client";
+'use client';
 
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Trash2, Minus, Plus } from "lucide-react";
+import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
+import { useState, useEffect } from "react";
 
 export default function CartPage() {
-  // Empty state for demo
-  const cartItems: any[] = [];
+  const { cart, removeFromCart, updateQuantity, cartTotal, cartCount } = useCart();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow container mx-auto px-4 py-12" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold font-headline mb-8">Your Shopping Basket</h1>
+        <div className="flex items-center gap-3 mb-8">
+          <ShoppingBag className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold font-headline">Your Shopping Basket</h1>
+        </div>
 
-        {cartItems.length === 0 ? (
+        {cart.length === 0 ? (
           <div className="text-center py-24 space-y-6">
             <div className="mx-auto bg-muted w-24 h-24 rounded-full flex items-center justify-center">
               <ShoppingBag className="h-12 w-12 text-muted-foreground" />
@@ -35,30 +52,101 @@ export default function CartPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
-              {/* Cart items would go here */}
+              {cart.map((item) => (
+                <Card key={item.id} className="overflow-hidden border-none shadow-sm bg-card/60">
+                  <div className="flex flex-col sm:flex-row">
+                    <div className="relative w-full sm:w-32 h-32">
+                      <Image 
+                        src={item.image} 
+                        alt={item.name} 
+                        fill 
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 p-4 flex flex-col justify-between">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-lg text-primary">{item.name}</h3>
+                          <p className="text-sm text-muted-foreground">Farmer: {item.farmer}</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => removeFromCart(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex justify-between items-center mt-4">
+                        <div className="flex items-center border rounded-md bg-background">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(item.id, -1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(item.id, 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">₹{item.price.toFixed(2)} / {item.unit}</p>
+                          <p className="font-bold text-lg text-primary">₹{(item.price * item.quantity).toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              <div className="pt-4">
+                <Button variant="outline" asChild className="gap-2 border-primary text-primary hover:bg-primary/5">
+                  <Link href="/explore">
+                    Continue Shopping <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
-            <div>
-              <Card>
+            
+            <div className="space-y-4">
+              <Card className="sticky top-24 border-primary/20">
                 <CardHeader>
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>₹0.00</span>
+                    <span className="text-muted-foreground">Subtotal ({cartCount} items)</span>
+                    <span className="font-medium">₹{cartTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Delivery</span>
-                    <span className="text-primary font-medium">Calculated at checkout</span>
+                    <span className="text-muted-foreground">Delivery</span>
+                    <span className="text-primary font-medium italic">Calculated at next step</span>
                   </div>
                   <Separator />
-                  <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between text-xl font-bold">
                     <span>Total</span>
-                    <span>₹0.00</span>
+                    <span className="text-primary">₹{cartTotal.toFixed(2)}</span>
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Button className="w-full h-12 text-lg">Proceed to Checkout</Button>
+                <CardFooter className="flex flex-col gap-4">
+                  <Button className="w-full h-12 text-lg font-bold" asChild>
+                    <Link href="/auth/login?redirect=checkout">Secure Checkout</Link>
+                  </Button>
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <span>Safe & Secure Guest Shopping</span>
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground px-2">
+                    Sign in is required only at the final step to provide your delivery details and process payment.
+                  </p>
                 </CardFooter>
               </Card>
             </div>

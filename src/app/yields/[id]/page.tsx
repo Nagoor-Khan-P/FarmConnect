@@ -9,13 +9,17 @@ import { Separator } from "@/components/ui/separator";
 import { Star, MapPin, Truck, ShieldCheck, ShoppingBag, ArrowLeft, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function YieldDetailPage() {
   const { id } = useParams();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   // Mock data for detail view
   const yieldItem = {
-    id: id,
+    id: id as string,
     name: "Crisp Orchard Apples",
     category: "Fruits",
     price: 180.00,
@@ -27,6 +31,21 @@ export default function YieldDetailPage() {
     description: "Our hand-picked Fuji apples are grown without synthetic pesticides. Each apple is selected for its perfect snap and balance of sweetness and tartness. Harvested at peak ripeness to ensure maximum flavor and nutrition.",
     features: ["Organic Certified", "Freshly Harvested", "No Added Wax", "Locally Grown"],
     images: ["https://picsum.photos/seed/apples/800/600"]
+  };
+
+  const handleAddToCart = () => {
+    addToCart({
+      id: yieldItem.id,
+      name: yieldItem.name,
+      price: yieldItem.price,
+      image: yieldItem.images[0],
+      unit: yieldItem.unit,
+      farmer: yieldItem.farmer
+    });
+    toast({
+      title: "Added to basket",
+      description: `${yieldItem.name} has been added to your shopping basket.`,
+    });
   };
 
   return (
@@ -89,7 +108,7 @@ export default function YieldDetailPage() {
             <Separator />
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="flex-1 gap-2 h-14 text-lg">
+              <Button onClick={handleAddToCart} size="lg" className="flex-1 gap-2 h-14 text-lg">
                 <ShoppingBag className="h-5 w-5" /> Add to Basket
               </Button>
               <Button size="lg" variant="outline" className="h-14 w-14 p-0">

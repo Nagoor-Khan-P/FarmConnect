@@ -12,9 +12,17 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
+import { useState, useEffect } from "react";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { cartCount } = useCart();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navLinks = [
     { href: "/explore", label: "Explore Yields" },
@@ -66,7 +74,11 @@ export function Navbar() {
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative shrink-0">
               <ShoppingBag className={cn("h-5 w-5", pathname === "/cart" && "text-primary")} />
-              <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-secondary text-[10px] font-bold flex items-center justify-center text-white">0</span>
+              {mounted && cartCount > 0 && (
+                <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
             </Button>
           </Link>
 
