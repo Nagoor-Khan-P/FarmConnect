@@ -34,7 +34,7 @@ export function YieldCard({
   imageHint
 }: YieldCardProps) {
   return (
-    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-card/50">
+    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-card/50 flex flex-col h-full">
       <Link href={`/yields/${id}`}>
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
@@ -50,11 +50,11 @@ export function YieldCard({
         </div>
       </Link>
       <CardHeader className="p-4 pb-0">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start gap-2">
           <Link href={`/yields/${id}`}>
-            <h3 className="text-lg font-bold font-headline group-hover:text-primary transition-colors">{name}</h3>
+            <h3 className="text-lg font-bold font-headline group-hover:text-primary transition-colors line-clamp-2">{name}</h3>
           </Link>
-          <div className="flex items-center gap-1 text-xs font-bold text-secondary">
+          <div className="flex items-center gap-1 text-xs font-bold text-secondary shrink-0">
             <Star className="h-3 w-3 fill-current" />
             {rating}
           </div>
@@ -63,13 +63,13 @@ export function YieldCard({
           <MapPin className="h-3 w-3" /> {location}
         </p>
       </CardHeader>
-      <CardContent className="p-4 pt-2">
+      <CardContent className="p-4 pt-2 flex-grow">
         <p className="text-sm text-muted-foreground">Sold by <span className="font-semibold text-foreground">{farmer}</span></p>
         <div className="mt-2 text-xl font-bold text-primary">
           ₹{price.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">/ {unit}</span>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-4 pt-0 mt-auto">
         <Button className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
           <ShoppingBag className="h-4 w-4" /> Add to Basket
         </Button>
