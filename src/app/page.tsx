@@ -83,11 +83,11 @@ export default function Home() {
                 Support local farmers and get the freshest produce, dairy, and artisanal goods delivered from the farm straight to your doorstep.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8">
-                  Shop Now
+                <Button size="lg" asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8">
+                  <Link href="/explore">Shop Now</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="bg-transparent text-white border-white hover:bg-white/10 px-8">
-                  Register as Farmer
+                <Button size="lg" variant="outline" asChild className="bg-transparent text-white border-white hover:bg-white/10 px-8">
+                  <Link href="/farmer/register">Register as Farmer</Link>
                 </Button>
               </div>
             </div>
@@ -157,8 +157,8 @@ export default function Home() {
                 <p className="text-lg text-muted-foreground">
                   Join thousands of local farmers who are reaching more customers and growing their business with FarmConnect.
                 </p>
-                <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold">
-                  Become a Farmer Partner
+                <Button size="lg" asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold">
+                  <Link href="/farmer/register">Become a Farmer Partner</Link>
                 </Button>
               </div>
               <div className="flex-1 relative aspect-square w-full max-w-md">
