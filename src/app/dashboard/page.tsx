@@ -5,10 +5,11 @@ import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, Settings, User, LogOut, Mail, Shield } from "lucide-react";
+import { ShoppingCart, Heart, Settings, User, LogOut, Mail, Shield, ShoppingBag, ArrowRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -55,9 +56,16 @@ export default function DashboardPage() {
           </aside>
 
           <div className="flex-1 w-full">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold font-headline">Account Dashboard</h1>
-              <p className="text-muted-foreground mt-1">Welcome back, {user.username}!</p>
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold font-headline">Account Dashboard</h1>
+                <p className="text-muted-foreground mt-1">Welcome back, {user.username}!</p>
+              </div>
+              <Button asChild className="gap-2 bg-primary hover:bg-primary/90 font-bold">
+                <Link href="/explore">
+                  <ShoppingBag className="h-4 w-4" /> Start Shopping
+                </Link>
+              </Button>
             </div>
             
             <Tabs defaultValue="orders" className="space-y-6">
@@ -80,8 +88,13 @@ export default function DashboardPage() {
                     <CardDescription>Manage and track your recent farm-fresh purchases.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                      No orders placed yet. Start exploring fresh yields!
+                    <div className="text-center py-12 space-y-4 border-2 border-dashed rounded-lg">
+                      <p className="text-muted-foreground">No orders placed yet. Start exploring fresh yields!</p>
+                      <Button variant="outline" asChild className="gap-2 border-primary text-primary hover:bg-primary/5">
+                        <Link href="/explore">
+                          Browse Harvest <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -108,7 +121,7 @@ export default function DashboardPage() {
                     <CardDescription>Manage your identity and roles on FarmConnect.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs font-bold text-muted-foreground uppercase">Full Name</p>
                         <p className="text-lg">{user.firstName} {user.lastName}</p>
