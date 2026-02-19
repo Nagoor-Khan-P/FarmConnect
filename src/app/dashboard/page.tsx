@@ -90,11 +90,6 @@ export default function DashboardPage() {
                   <CardContent>
                     <div className="text-center py-12 space-y-4 border-2 border-dashed rounded-lg">
                       <p className="text-muted-foreground">No orders placed yet. Start exploring fresh yields!</p>
-                      <Button variant="outline" asChild className="gap-2 border-primary text-primary hover:bg-primary/5">
-                        <Link href="/explore">
-                          Browse Harvest <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
