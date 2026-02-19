@@ -46,7 +46,7 @@ export default function DashboardPage() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="mt-6 w-full text-destructive hover:bg-destructive/10 border-destructive/20"
+                  className="mt-6 w-full text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground transition-colors"
                   onClick={logout}
                 >
                   <LogOut className="mr-2 h-4 w-4" /> Sign Out
@@ -61,7 +61,7 @@ export default function DashboardPage() {
                 <h1 className="text-3xl font-bold font-headline">Account Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Welcome back, {user.username}!</p>
               </div>
-              <Button asChild className="gap-2 bg-primary hover:bg-primary/90 font-bold">
+              <Button asChild className="gap-2 bg-primary hover:bg-primary/90 font-bold text-primary-foreground">
                 <Link href="/explore">
                   <ShoppingBag className="h-4 w-4" /> Start Shopping
                 </Link>
