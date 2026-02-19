@@ -3,21 +3,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Leaf, Search, ShoppingBag, User, Menu } from "lucide-react";
+import { Leaf, Search, ShoppingBag, User, Menu, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 
 export function Navbar() {
   const pathname = usePathname();
   const { cartCount } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -84,20 +87,47 @@ export function Navbar() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className={cn("rounded-full shrink-0", pathname.startsWith("/dashboard") && "border-primary")}>
-                <User className={cn("h-5 w-5", pathname.startsWith("/dashboard") && "text-primary")} />
+              <Button variant="outline" size="icon" className={cn("rounded-full shrink-0", (pathname.startsWith("/dashboard") || isAuthenticated) && "border-primary")}>
+                {isAuthenticated && user ? (
+                  <div className="bg-primary/10 w-full h-full flex items-center justify-center rounded-full text-xs font-bold text-primary">
+                    {user.firstName[0]}{user.lastName[0]}
+                  </div>
+                ) : (
+                  <User className={cn("h-5 w-5", pathname.startsWith("/dashboard") && "text-primary")} />
+                )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard" className={cn(pathname === "/dashboard" && "font-bold text-primary")}>Dashboard</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/auth/register" className={cn(pathname === "/auth/register" && "font-bold text-primary")}>Sign Up</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/farmer/register" className={cn(pathname === "/farmer/register" && "font-bold text-primary")}>Register as Farmer</Link>
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-56">
+              {isAuthenticated && user ? (
+                <>
+                  <div className="px-2 py-1.5 text-sm font-medium">
+                    <p className="text-sm font-bold truncate">{user.firstName} {user.lastName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4" /> Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout} className="text-destructive cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/auth/login">Sign In</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/auth/register">Create Account</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/farmer/register" className="font-bold text-primary">Become a Farmer</Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 

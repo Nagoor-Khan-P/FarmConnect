@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { login } = useAuth();
   const redirectPath = searchParams.get("redirect") || "/dashboard";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,12 +49,13 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Here you would typically store the JWT token
-        // localStorage.setItem('token', data.accessToken);
+        
+        // Use the global auth login method to store the token and user info
+        login(data);
         
         toast({
           title: "Welcome Back!",
-          description: "You have successfully signed in to FarmConnect.",
+          description: `Hello ${data.firstName}, you have successfully signed in.`,
         });
         
         router.push(redirectPath);

@@ -4,9 +4,24 @@
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingCart, Heart, Settings, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, Heart, Settings, User, LogOut, Mail, Shield } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
+  const { user, logout, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login?redirect=/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
+  if (!user) return null;
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -18,14 +33,32 @@ export default function DashboardPage() {
                 <div className="h-20 w-20 rounded-full bg-primary/20 mx-auto mb-4 flex items-center justify-center">
                   <User className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="font-bold text-lg">Alex Johnson</h3>
-                <p className="text-sm text-muted-foreground">Member since 2024</p>
+                <h3 className="font-bold text-lg">{user.firstName} {user.lastName}</h3>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">
+                  {user.roles[0]?.replace('ROLE_', '') || 'User'}
+                </p>
+                <div className="mt-6 space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground justify-center">
+                    <Mail className="h-3 w-3" /> {user.email}
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-6 w-full text-destructive hover:bg-destructive/10 border-destructive/20"
+                  onClick={logout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                </Button>
               </CardContent>
             </Card>
           </aside>
 
           <div className="flex-1 w-full">
-            <h1 className="text-3xl font-bold font-headline mb-8">Account Dashboard</h1>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold font-headline">Account Dashboard</h1>
+              <p className="text-muted-foreground mt-1">Welcome back, {user.username}!</p>
+            </div>
             
             <Tabs defaultValue="orders" className="space-y-6">
               <TabsList className="bg-muted/50 p-1">
@@ -35,8 +68,8 @@ export default function DashboardPage() {
                 <TabsTrigger value="wishlist" className="gap-2">
                   <Heart className="h-4 w-4" /> Wishlist
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="gap-2">
-                  <Settings className="h-4 w-4" /> Profile Settings
+                <TabsTrigger value="profile" className="gap-2">
+                  <Shield className="h-4 w-4" /> Account Security
                 </TabsTrigger>
               </TabsList>
 
@@ -47,7 +80,7 @@ export default function DashboardPage() {
                     <CardDescription>Manage and track your recent farm-fresh purchases.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12 text-muted-foreground">
+                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                       No orders placed yet. Start exploring fresh yields!
                     </div>
                   </CardContent>
@@ -61,21 +94,44 @@ export default function DashboardPage() {
                     <CardDescription>Your favorite yields saved for later.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12 text-muted-foreground">
+                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                       Your wishlist is empty.
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="settings">
+              <TabsContent value="profile">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Profile Settings</CardTitle>
-                    <CardDescription>Update your personal information and delivery address.</CardDescription>
+                    <CardTitle>Profile Information</CardTitle>
+                    <CardDescription>Manage your identity and roles on FarmConnect.</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Settings configuration coming soon...</p>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">Full Name</p>
+                        <p className="text-lg">{user.firstName} {user.lastName}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">Username</p>
+                        <p className="text-lg">{user.username}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">Email Address</p>
+                        <p className="text-lg">{user.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">Assigned Roles</p>
+                        <div className="flex gap-2 mt-1">
+                          {user.roles.map(role => (
+                            <span key={role} className="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
+                              {role}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
