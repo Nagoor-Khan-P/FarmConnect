@@ -46,7 +46,9 @@ export default function RegisterPage() {
           username: formData.username,
           email: formData.email,
           role: "ROLE_BUYER",
-          password: formData.password
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName
         }),
       });
 
