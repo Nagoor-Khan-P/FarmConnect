@@ -6,18 +6,69 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Leaf, Lock } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: ""
+  });
+  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const redirectPath = searchParams.get("redirect") || "/dashboard";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate login logic
-    setTimeout(() => setLoading(false), 1500);
+
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Here you would typically store the JWT token
+        // localStorage.setItem('token', data.accessToken);
+        
+        toast({
+          title: "Welcome Back!",
+          description: "You have successfully signed in to FarmConnect.",
+        });
+        
+        router.push(redirectPath);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Invalid username or password");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Sign In Failed",
+        description: error.message || "Could not connect to the server. Please ensure your Spring Boot backend is running.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,8 +86,15 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="john@example.com" required />
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username" 
+                  type="text" 
+                  placeholder="nagoor" 
+                  required 
+                  value={formData.username}
+                  onChange={handleInputChange}
+                />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -45,12 +103,24 @@ export default function LoginPage() {
                     Forgot password?
                   </Link>
                 </div>
-                <Input id="password" type="password" placeholder="••••••••" required />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  required 
+                  value={formData.password}
+                  onChange={handleInputChange}
+                />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full h-11 text-lg" disabled={loading}>
-                {loading ? "Signing In..." : "Sign In"}
+              <Button type="submit" className="w-full h-11 text-lg font-bold" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing In...
+                  </>
+                ) : "Sign In"}
               </Button>
               <div className="text-center text-sm">
                 Don't have an account?{" "}
