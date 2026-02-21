@@ -19,8 +19,7 @@ export default function FarmerRegisterPage() {
     email: "",
     password: "",
     firstName: "",
-    lastName: "",
-    farmName: ""
+    lastName: ""
   });
   
   const router = useRouter();
@@ -28,10 +27,8 @@ export default function FarmerRegisterPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    // Map the kebab-case IDs to camelCase state keys
     const key = id === "first-name" ? "firstName" : 
-                id === "last-name" ? "lastName" : 
-                id === "farm-name" ? "farmName" : id;
+                id === "last-name" ? "lastName" : id;
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
@@ -51,8 +48,7 @@ export default function FarmerRegisterPage() {
           role: "ROLE_FARMER",
           password: formData.password,
           firstName: formData.firstName,
-          lastName: formData.lastName,
-          farmName: formData.farmName
+          lastName: formData.lastName
         }),
       });
 
@@ -110,15 +106,6 @@ export default function FarmerRegisterPage() {
                     onChange={handleInputChange}
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="farm-name">Farm Name</Label>
-                <Input 
-                  id="farm-name" 
-                  placeholder="Green Valley Harvest" 
-                  required 
-                  onChange={handleInputChange}
-                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
