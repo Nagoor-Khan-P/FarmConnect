@@ -20,21 +20,24 @@ import {
   Package, 
   TrendingUp,
   MapPin,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AiYieldDescription } from "@/components/AiYieldDescription";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, token, logout, isAuthenticated } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [hasFarm, setHasFarm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [farmData, setFarmData] = useState({
     name: "",
-    location: "",
+    address: "",
     description: ""
   });
 
@@ -48,9 +51,43 @@ export default function DashboardPage() {
 
   const isFarmer = user.roles.includes('ROLE_FARMER');
 
-  const handleSaveFarm = (e: React.FormEvent) => {
+  const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setHasFarm(true);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch('http://localhost:8080/api/farms/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token || '',
+        },
+        body: JSON.stringify({
+          name: farmData.name,
+          address: farmData.address,
+          description: farmData.description
+        }),
+      });
+
+      if (response.ok) {
+        setHasFarm(true);
+        toast({
+          title: "Farm Registered!",
+          description: "Your farm storefront has been successfully created.",
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to register farm");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message || "Could not connect to the server. Please ensure your backend is running.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -76,7 +113,7 @@ export default function DashboardPage() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="mt-6 w-full text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  className="mt-6 w-full text-destructive border-destructive/20 hover:bg-destructive hover:text-white transition-colors"
                   onClick={logout}
                 >
                   <LogOut className="mr-2 h-4 w-4" /> Sign Out
@@ -154,16 +191,16 @@ export default function DashboardPage() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="location">Location</Label>
+                              <Label htmlFor="address">Address</Label>
                               <div className="relative">
                                 <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input 
-                                  id="location" 
+                                  id="address" 
                                   className="pl-9" 
-                                  placeholder="e.g. East Hills, California" 
+                                  placeholder="e.g. 123 Farm Road, Countryside" 
                                   required 
-                                  value={farmData.location}
-                                  onChange={(e) => setFarmData({...farmData, location: e.target.value})}
+                                  value={farmData.address}
+                                  onChange={(e) => setFarmData({...farmData, address: e.target.value})}
                                 />
                               </div>
                             </div>
@@ -171,15 +208,22 @@ export default function DashboardPage() {
                               <Label htmlFor="desc">Farm Story</Label>
                               <textarea 
                                 id="desc" 
-                                className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                                placeholder="Tell us a bit about your sustainable practices..."
+                                className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                placeholder="Tell us about your organic vegetables and fruits..."
                                 value={farmData.description}
                                 onChange={(e) => setFarmData({...farmData, description: e.target.value})}
                               />
                             </div>
                           </CardContent>
                           <CardFooter>
-                            <Button type="submit" className="w-full font-bold">Launch Farm Storefront</Button>
+                            <Button type="submit" className="w-full font-bold" disabled={isSaving}>
+                              {isSaving ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Registering Farm...
+                                </>
+                              ) : "Launch Farm Storefront"}
+                            </Button>
                           </CardFooter>
                         </form>
                       </Card>
@@ -189,7 +233,7 @@ export default function DashboardPage() {
                           <div>
                             <CardTitle>{farmData.name}</CardTitle>
                             <CardDescription className="flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" /> {farmData.location}
+                              <MapPin className="h-3 w-3" /> {farmData.address}
                             </CardDescription>
                           </div>
                           <Button variant="outline" size="sm" onClick={() => setHasFarm(false)}>Edit Profile</Button>
