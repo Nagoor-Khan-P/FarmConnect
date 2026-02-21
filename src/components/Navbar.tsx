@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Leaf, Search, ShoppingBag, User, Menu, LogOut, LayoutDashboard } from "lucide-react";
+import { Leaf, Search, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -27,11 +27,21 @@ export function Navbar() {
     setMounted(true);
   }, []);
 
-  const navLinks = [
+  const isFarmer = user?.roles.includes('ROLE_FARMER');
+
+  const buyerLinks = [
     { href: "/explore", label: "Explore Yields" },
     { href: "/farmers", label: "Meet Farmers" },
     { href: "/about", label: "Our Mission" },
   ];
+
+  const farmerLinks = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/explore", label: "Explore" },
+    { href: "/about", label: "Our Mission" },
+  ];
+
+  const navLinks = isFarmer ? farmerLinks : buyerLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -51,7 +61,7 @@ export function Navbar() {
               key={link.href}
               href={link.href}
               className={cn(
-                "transition-colors hover:text-primary whitespace-nowrap",
+                "transition-colors hover:text-primary whitespace-nowrap flex items-center gap-1.5",
                 pathname === link.href 
                   ? "text-primary font-bold" 
                   : "text-muted-foreground"
@@ -124,7 +134,15 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link href="/farmer/register" className="font-bold text-primary">Become a Farmer</Link>
+                    <Link href="/farmer/register" className="font-bold text-primary">Become a Farmer Partner</Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {isAuthenticated && !isFarmer && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/farmer/register" className="font-bold text-primary">Upgrade to Farmer</Link>
                   </DropdownMenuItem>
                 </>
               )}
