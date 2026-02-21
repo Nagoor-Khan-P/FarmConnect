@@ -33,23 +33,60 @@ export default function DashboardPage() {
   const { user, token, logout, isAuthenticated } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  
   const [hasFarm, setHasFarm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingFarm, setIsLoadingFarm] = useState(true);
   const [farmData, setFarmData] = useState({
     name: "",
     address: "",
     description: ""
   });
 
+  const isFarmer = user?.roles.includes('ROLE_FARMER');
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/auth/login?redirect=/dashboard');
+      return;
     }
-  }, [isAuthenticated, router]);
+
+    // Only fetch farm data if the user is a farmer
+    if (isFarmer && token) {
+      fetchFarmDetails();
+    } else {
+      setIsLoadingFarm(false);
+    }
+  }, [isAuthenticated, isFarmer, token, router]);
+
+  const fetchFarmDetails = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/farms/my-farm', {
+        method: 'GET',
+        headers: {
+          'Authorization': token || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.name) {
+          setFarmData({
+            name: data.name,
+            address: data.address,
+            description: data.description
+          });
+          setHasFarm(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching farm details:", error);
+    } finally {
+      setIsLoadingFarm(false);
+    }
+  };
 
   if (!user) return null;
-
-  const isFarmer = user.roles.includes('ROLE_FARMER');
 
   const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +209,11 @@ export default function DashboardPage() {
               {isFarmer && (
                 <>
                   <TabsContent value="farm">
-                    {!hasFarm ? (
+                    {isLoadingFarm ? (
+                      <Card className="flex items-center justify-center py-20">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </Card>
+                    ) : !hasFarm ? (
                       <Card className="border-t-4 border-t-primary">
                         <CardHeader>
                           <CardTitle>Register Your Farm</CardTitle>
