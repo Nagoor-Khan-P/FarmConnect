@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Loader2,
   Trash2,
+  RefreshCcw,
   AlertCircle
 } from "lucide-react";
 import { 
@@ -100,6 +101,8 @@ export default function DashboardPage() {
           });
           setHasFarm(true);
         }
+      } else if (response.status === 404) {
+        setHasFarm(false);
       }
     } catch (error) {
       console.error("Error fetching farm details:", error);
@@ -117,14 +120,27 @@ export default function DashboardPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        // Ensure data is an array
+        setProducts(Array.isArray(data) ? data : []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast({
+          variant: "destructive",
+          title: "Fetch Failed",
+          description: errorData.message || `Error ${response.status}: Could not load inventory.`,
+        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Failed to connect to the product API.",
+      });
     } finally {
       setIsProductsLoading(false);
     }
-  }, [token]);
+  }, [token, toast]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -209,6 +225,7 @@ export default function DashboardPage() {
           stockQuantity: 10,
           image: "https://picsum.photos/seed/product/400/300"
         });
+        // Refetch inventory after adding
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -431,102 +448,113 @@ export default function DashboardPage() {
                           <CardTitle>Yield Inventory</CardTitle>
                           <CardDescription>Manage your active listings and stock levels.</CardDescription>
                         </div>
-                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button disabled={!hasFarm} className="gap-2">
-                              <Plus className="h-4 w-4" /> Add New Yield
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[500px]">
-                            <form onSubmit={handleAddProduct}>
-                              <DialogHeader>
-                                <DialogTitle>Add New Yield</DialogTitle>
-                                <DialogDescription>Fill in the details to list your fresh harvest.</DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="prod-name">Yield Name</Label>
-                                    <Input 
-                                      id="prod-name" 
-                                      placeholder="e.g. Fuji Apples" 
-                                      required
-                                      value={newProduct.name}
-                                      onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                                    />
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={fetchMyProducts} 
+                            disabled={isProductsLoading || !hasFarm}
+                            title="Refresh Inventory"
+                          >
+                            <RefreshCcw className={`h-4 w-4 ${isProductsLoading ? 'animate-spin' : ''}`} />
+                          </Button>
+                          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button disabled={!hasFarm} className="gap-2">
+                                <Plus className="h-4 w-4" /> Add New Yield
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[500px]">
+                              <form onSubmit={handleAddProduct}>
+                                <DialogHeader>
+                                  <DialogTitle>Add New Yield</DialogTitle>
+                                  <DialogDescription>Fill in the details to list your fresh harvest.</DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="prod-name">Yield Name</Label>
+                                      <Input 
+                                        id="prod-name" 
+                                        placeholder="e.g. Fuji Apples" 
+                                        required
+                                        value={newProduct.name}
+                                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="prod-cat">Category</Label>
+                                      <select 
+                                        id="prod-cat"
+                                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={newProduct.category}
+                                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                                      >
+                                        <option>Vegetables</option>
+                                        <option>Fruits</option>
+                                        <option>Dairy & Eggs</option>
+                                        <option>Bakery</option>
+                                        <option>Pantry</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="prod-price">Price (₹)</Label>
+                                      <Input 
+                                        id="prod-price" 
+                                        type="number" 
+                                        required
+                                        value={newProduct.price}
+                                        onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value)})}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="prod-unit">Unit</Label>
+                                      <Input 
+                                        id="prod-unit" 
+                                        placeholder="kg, bunch" 
+                                        required
+                                        value={newProduct.unit}
+                                        onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="prod-stock">Stock</Label>
+                                      <Input 
+                                        id="prod-stock" 
+                                        type="number" 
+                                        required
+                                        value={newProduct.stockQuantity}
+                                        onChange={(e) => setNewProduct({...newProduct, stockQuantity: parseInt(e.target.value)})}
+                                      />
+                                    </div>
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor="prod-cat">Category</Label>
-                                    <select 
-                                      id="prod-cat"
-                                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                      value={newProduct.category}
-                                      onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                                    >
-                                      <option>Vegetables</option>
-                                      <option>Fruits</option>
-                                      <option>Dairy & Eggs</option>
-                                      <option>Bakery</option>
-                                      <option>Pantry</option>
-                                    </select>
+                                    <AiYieldDescription 
+                                      yieldType={newProduct.name}
+                                      characteristics={["fresh", "local", "organic"]}
+                                      onGenerated={(desc) => setNewProduct({...newProduct, description: desc})}
+                                    />
+                                    <textarea 
+                                      id="prod-desc"
+                                      className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                      placeholder="Describe your yield..."
+                                      required
+                                      value={newProduct.description}
+                                      onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                                    />
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="prod-price">Price (₹)</Label>
-                                    <Input 
-                                      id="prod-price" 
-                                      type="number" 
-                                      required
-                                      value={newProduct.price}
-                                      onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value)})}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="prod-unit">Unit</Label>
-                                    <Input 
-                                      id="prod-unit" 
-                                      placeholder="kg, bunch" 
-                                      required
-                                      value={newProduct.unit}
-                                      onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="prod-stock">Stock</Label>
-                                    <Input 
-                                      id="prod-stock" 
-                                      type="number" 
-                                      required
-                                      value={newProduct.stockQuantity}
-                                      onChange={(e) => setNewProduct({...newProduct, stockQuantity: parseInt(e.target.value)})}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <AiYieldDescription 
-                                    yieldType={newProduct.name}
-                                    characteristics={["fresh", "local", "organic"]}
-                                    onGenerated={(desc) => setNewProduct({...newProduct, description: desc})}
-                                  />
-                                  <textarea 
-                                    id="prod-desc"
-                                    className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    placeholder="Describe your yield..."
-                                    required
-                                    value={newProduct.description}
-                                    onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                                  />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button type="submit" disabled={isAddingProduct}>
-                                  {isAddingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "List Yield"}
-                                </Button>
-                              </DialogFooter>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
+                                <DialogFooter>
+                                  <Button type="submit" disabled={isAddingProduct}>
+                                    {isAddingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "List Yield"}
+                                  </Button>
+                                </DialogFooter>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         {!hasFarm ? (
@@ -535,11 +563,17 @@ export default function DashboardPage() {
                             <p className="text-muted-foreground">Please register your farm first to add yields.</p>
                           </div>
                         ) : isProductsLoading ? (
-                          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                          <div className="flex flex-col items-center justify-center py-12 gap-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-sm text-muted-foreground">Loading your yields...</p>
+                          </div>
                         ) : products.length === 0 ? (
                           <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
                             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">You haven't added any yields yet.</p>
+                            <Button variant="link" onClick={fetchMyProducts} className="mt-2 font-bold text-primary">
+                              Try refreshing
+                            </Button>
                           </div>
                         ) : (
                           <Table>
