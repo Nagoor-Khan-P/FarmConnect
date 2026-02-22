@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { AiYieldDescription } from "@/components/AiYieldDescription";
@@ -197,6 +197,21 @@ export default function DashboardPage() {
       setIsLoadingFarms(false);
     }
   }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchMySales, router]);
+
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, { farm: any; products: any[] }> = {};
+    products.forEach((p) => {
+      const farmId = p.farm?.id || "unassigned";
+      if (!groups[farmId]) {
+        groups[farmId] = {
+          farm: p.farm || { name: "Unassigned Yields", address: {} },
+          products: [],
+        };
+      }
+      groups[farmId].products.push(p);
+    });
+    return groups;
+  }, [products]);
 
   const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -559,7 +574,7 @@ export default function DashboardPage() {
                       <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                           <CardTitle>Yield Inventory</CardTitle>
-                          <CardDescription>Manage your active listings and stock levels.</CardDescription>
+                          <CardDescription>Grouped by your farm storefronts.</CardDescription>
                         </div>
                         <div className="flex gap-2">
                           <Button 
@@ -691,42 +706,59 @@ export default function DashboardPage() {
                             <p className="text-muted-foreground">You haven't added any yields yet.</p>
                           </div>
                         ) : (
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Yield</TableHead>
-                                <TableHead>Farm</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Stock</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {products.map((p) => (
-                                <TableRow key={p.id}>
-                                  <TableCell className="font-medium">{p.name}</TableCell>
-                                  <TableCell className="text-xs text-muted-foreground">{p.farmer?.farm?.name || "No Farm"}</TableCell>
-                                  <TableCell>{p.category}</TableCell>
-                                  <TableCell>₹{p.price} / {p.unit}</TableCell>
-                                  <TableCell>{p.quantity}</TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex justify-end gap-2">
-                                      <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10" onClick={() => { setStockUpdate({ id: p.id, quantity: p.quantity }); setIsStockDialogOpen(true); }}>
-                                        <Box className="h-4 w-4" />
-                                      </Button>
-                                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/5" onClick={() => { setEditingProduct(p); setIsEditDialogOpen(true); }}>
-                                        <Pencil className="h-4 w-4" />
-                                      </Button>
-                                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                          <div className="space-y-10">
+                            {Object.values(groupedProducts).map((group) => (
+                              <div key={group.farm.id} className="space-y-4">
+                                <div className="flex items-center gap-2 border-b border-primary/20 pb-2">
+                                  <Store className="h-5 w-5 text-primary" />
+                                  <h3 className="text-lg font-bold font-headline">{group.farm.name}</h3>
+                                  {group.farm.address?.city && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <MapPin className="h-3 w-3" /> {group.farm.address.city}, {group.farm.address.state}
+                                    </span>
+                                  )}
+                                </div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Yield</TableHead>
+                                      <TableHead>Category</TableHead>
+                                      <TableHead>Price</TableHead>
+                                      <TableHead>Stock</TableHead>
+                                      <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {group.products.map((p) => (
+                                      <TableRow key={p.id}>
+                                        <TableCell className="font-medium">{p.name}</TableCell>
+                                        <TableCell>{p.category}</TableCell>
+                                        <TableCell>₹{p.price} / {p.unit}</TableCell>
+                                        <TableCell>
+                                          <Badge variant={p.quantity < 10 ? "destructive" : "secondary"}>
+                                            {p.quantity} {p.unit}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex justify-end gap-2">
+                                            <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10" onClick={() => { setStockUpdate({ id: p.id, quantity: p.quantity }); setIsStockDialogOpen(true); }}>
+                                              <Box className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/5" onClick={() => { setEditingProduct(p); setIsEditDialogOpen(true); }}>
+                                              <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </CardContent>
                     </Card>
