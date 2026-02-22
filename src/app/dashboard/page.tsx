@@ -291,8 +291,6 @@ export default function DashboardPage() {
     setIsUpdatingProduct(true);
 
     try {
-      // The 403 Forbidden on preflight (OPTIONS) in your screenshot is a backend configuration issue.
-      // Ensure your Spring Security permits HttpMethod.OPTIONS for your API endpoints.
       const response = await fetch(`http://localhost:8080/api/products/${stockUpdate.id}/stock`, {
         method: 'PATCH',
         headers: {
@@ -463,8 +461,9 @@ export default function DashboardPage() {
                           <CardContent className="space-y-4">
                             <div className="space-y-2">
                               <Label htmlFor="farm-name">Farm Name</Label>
-                              <Input 
+                              <input 
                                 id="farm-name" 
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 placeholder="e.g. Green Valley Organic Farm" 
                                 required 
                                 value={farmData.name}
@@ -475,9 +474,9 @@ export default function DashboardPage() {
                               <Label htmlFor="address">Address</Label>
                               <div className="relative">
                                 <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input 
+                                <input 
                                   id="address" 
-                                  className="pl-9" 
+                                  className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm" 
                                   placeholder="e.g. 123 Farm Road, Countryside" 
                                   required 
                                   value={farmData.address}
@@ -702,7 +701,7 @@ export default function DashboardPage() {
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="text-primary hover:bg-primary/10"
+                                        className="text-primary hover:bg-primary/10 hover:text-primary"
                                         onClick={() => openStockDialog(p)}
                                         title="Quick Stock Update"
                                       >
@@ -711,7 +710,7 @@ export default function DashboardPage() {
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="text-muted-foreground hover:bg-muted"
+                                        className="text-muted-foreground hover:bg-muted hover:text-foreground"
                                         onClick={() => openEditDialog(p)}
                                         title="Edit Yield"
                                       >
@@ -720,7 +719,7 @@ export default function DashboardPage() {
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="text-destructive hover:bg-destructive/10"
+                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                         onClick={() => handleDeleteProduct(p.id)}
                                         title="Delete Yield"
                                       >
