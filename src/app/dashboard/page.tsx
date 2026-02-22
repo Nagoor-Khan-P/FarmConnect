@@ -23,8 +23,7 @@ import {
   CheckCircle2,
   Loader2,
   Trash2,
-  RefreshCcw,
-  AlertCircle
+  RefreshCcw
 } from "lucide-react";
 import { 
   Dialog, 
@@ -75,7 +74,7 @@ export default function DashboardPage() {
     price: 0,
     category: "Vegetables",
     unit: "kg",
-    stockQuantity: 10,
+    quantity: 10,
     image: "https://picsum.photos/seed/product/400/300"
   });
 
@@ -120,7 +119,6 @@ export default function DashboardPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        // Ensure data is an array
         setProducts(Array.isArray(data) ? data : []);
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -222,10 +220,9 @@ export default function DashboardPage() {
           price: 0,
           category: "Vegetables",
           unit: "kg",
-          stockQuantity: 10,
+          quantity: 10,
           image: "https://picsum.photos/seed/product/400/300"
         });
-        // Refetch inventory after adding
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -525,8 +522,8 @@ export default function DashboardPage() {
                                         id="prod-stock" 
                                         type="number" 
                                         required
-                                        value={newProduct.stockQuantity}
-                                        onChange={(e) => setNewProduct({...newProduct, stockQuantity: parseInt(e.target.value)})}
+                                        value={newProduct.quantity}
+                                        onChange={(e) => setNewProduct({...newProduct, quantity: parseInt(e.target.value)})}
                                       />
                                     </div>
                                   </div>
@@ -592,7 +589,7 @@ export default function DashboardPage() {
                                   <TableCell className="font-medium">{p.name}</TableCell>
                                   <TableCell>{p.category}</TableCell>
                                   <TableCell>₹{p.price} / {p.unit}</TableCell>
-                                  <TableCell>{p.stockQuantity}</TableCell>
+                                  <TableCell>{p.quantity}</TableCell>
                                   <TableCell className="text-right">
                                     <Button 
                                       variant="ghost" 
