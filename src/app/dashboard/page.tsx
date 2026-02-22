@@ -317,7 +317,7 @@ export default function DashboardPage() {
       toast({
         variant: "destructive",
         title: "Stock Update Failed",
-        description: error.message,
+        description: error.message || "CORS Error: Ensure your backend permits OPTIONS/PATCH methods in its Security configuration.",
       });
     } finally {
       setIsUpdatingProduct(false);
