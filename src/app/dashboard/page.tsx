@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { 
   ShoppingCart, 
   Heart, 
@@ -78,10 +79,11 @@ export default function DashboardPage() {
   // Product Management State
   const [products, setProducts] = useState<any[]>([]);
   const [isProductsLoading, setIsProductsLoading] = useState(false);
-  const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
-  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   
+  // Sales Management State
+  const [sales, setSales] = useState<any[]>([]);
+  const [isSalesLoading, setIsSalesLoading] = useState(false);
+
   // Dialog States
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -149,7 +151,7 @@ export default function DashboardPage() {
         toast({
           variant: "destructive",
           title: "Inventory Load Failed",
-          description: errorData.message || `Error ${response.status}: Please ensure your backend is accessible.`,
+          description: errorData.message || `Error ${response.status}: Failed to fetch products.`,
         });
       }
     } catch (error) {
@@ -164,6 +166,36 @@ export default function DashboardPage() {
     }
   }, [token, toast]);
 
+  const fetchMySales = useCallback(async () => {
+    if (!token) return;
+    setIsSalesLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/orders/my-sales', {
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSales(Array.isArray(data) ? data : []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast({
+          variant: "destructive",
+          title: "Sales Load Failed",
+          description: errorData.message || `Error ${response.status}: Failed to fetch sales history.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching sales:", error);
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Failed to connect to the sales API.",
+      });
+    } finally {
+      setIsSalesLoading(false);
+    }
+  }, [token, toast]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/auth/login?redirect=/dashboard');
@@ -173,10 +205,11 @@ export default function DashboardPage() {
     if (isFarmer) {
       fetchFarmDetails();
       fetchMyProducts();
+      fetchMySales();
     } else {
       setIsLoadingFarm(false);
     }
-  }, [isAuthenticated, isFarmer, fetchFarmDetails, fetchMyProducts, router]);
+  }, [isAuthenticated, isFarmer, fetchFarmDetails, fetchMyProducts, fetchMySales, router]);
 
   const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,7 +253,10 @@ export default function DashboardPage() {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsAddingProduct(true);
+    const loadingToast = toast({
+      title: "Adding Yield",
+      description: "Listing your product on the marketplace...",
+    });
 
     try {
       const response = await fetch('http://localhost:8080/api/products', {
@@ -235,7 +271,7 @@ export default function DashboardPage() {
       if (response.ok) {
         toast({
           title: "Yield Added",
-          description: `${newProduct.name} is now live on the marketplace.`,
+          description: `${newProduct.name} is now live!`,
         });
         setIsDialogOpen(false);
         setNewProduct({
@@ -258,15 +294,12 @@ export default function DashboardPage() {
         title: "Error",
         description: error.message,
       });
-    } finally {
-      setIsAddingProduct(false);
     }
   };
 
   const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
-    setIsUpdatingProduct(true);
 
     try {
       const response = await fetch(`http://localhost:8080/api/products/${editingProduct.id}`, {
@@ -295,15 +328,12 @@ export default function DashboardPage() {
         title: "Update Failed",
         description: error.message,
       });
-    } finally {
-      setIsUpdatingProduct(false);
     }
   };
 
   const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stockUpdate.id) return;
-    setIsUpdatingProduct(true);
 
     try {
       const response = await fetch(`http://localhost:8080/api/products/${stockUpdate.id}/stock`, {
@@ -324,22 +354,24 @@ export default function DashboardPage() {
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update stock.");
+        // If 403, specifically mention preflight/security configuration
+        const description = response.status === 403 
+          ? "Preflight check failed (CORS/Security). Please ensure your Spring Boot backend allows OPTIONS requests globally."
+          : (errorData.message || "Failed to update stock.");
+        
+        throw new Error(description);
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Stock Update Failed",
-        description: error.message || "Could not connect to the server.",
+        description: error.message,
       });
-    } finally {
-      setIsUpdatingProduct(false);
     }
   };
 
   const confirmDeleteProduct = async () => {
     if (!productToDelete) return;
-    setIsDeletingProduct(true);
 
     try {
       const response = await fetch(`http://localhost:8080/api/products/${productToDelete.id}`, {
@@ -360,8 +392,6 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed to delete", description: error.message });
-    } finally {
-      setIsDeletingProduct(false);
     }
   };
 
@@ -555,8 +585,8 @@ export default function DashboardPage() {
                               <p className="text-xs text-muted-foreground uppercase">Active Yields</p>
                             </div>
                             <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
-                              <p className="text-2xl font-bold">0</p>
-                              <p className="text-xs text-muted-foreground uppercase">Monthly Sales</p>
+                              <p className="text-2xl font-bold">{sales.length}</p>
+                              <p className="text-xs text-muted-foreground uppercase">Total Sales</p>
                             </div>
                             <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
                               <p className="text-2xl font-bold">5.0</p>
@@ -674,9 +704,7 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button type="submit" disabled={isAddingProduct} className="w-full">
-                                    {isAddingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "List Yield"}
-                                  </Button>
+                                  <Button type="submit" className="w-full">List Yield</Button>
                                 </DialogFooter>
                               </form>
                             </DialogContent>
@@ -698,9 +726,6 @@ export default function DashboardPage() {
                           <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
                             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">You haven't added any yields yet.</p>
-                            <Button variant="link" onClick={fetchMyProducts} className="mt-2 font-bold text-primary">
-                              Try refreshing
-                            </Button>
                           </div>
                         ) : (
                           <Table>
@@ -761,16 +786,67 @@ export default function DashboardPage() {
                   </TabsContent>
 
                   <TabsContent value="sales">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Farm Sales</CardTitle>
-                        <CardDescription>Track orders from buyers for your farm yields.</CardDescription>
+                    <Card className="shadow-sm">
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Farm Sales</CardTitle>
+                          <CardDescription>Track orders from buyers for your farm yields.</CardDescription>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={fetchMySales} 
+                          disabled={isSalesLoading}
+                          title="Refresh Sales"
+                        >
+                          <RefreshCcw className={`h-4 w-4 ${isSalesLoading ? 'animate-spin' : ''}`} />
+                        </Button>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
-                          <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-muted-foreground">No sales activity yet. Your sales will appear here.</p>
-                        </div>
+                        {isSalesLoading ? (
+                          <div className="flex flex-col items-center justify-center py-12 gap-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-sm text-muted-foreground">Loading your sales history...</p>
+                          </div>
+                        ) : sales.length === 0 ? (
+                          <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
+                            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">No sales activity yet. Your sales will appear here once buyers place orders.</p>
+                          </div>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Order ID</TableHead>
+                                <TableHead>Product</TableHead>
+                                <TableHead>Buyer</TableHead>
+                                <TableHead>Quantity</TableHead>
+                                <TableHead>Total</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sales.map((sale) => (
+                                <TableRow key={sale.id}>
+                                  <TableCell className="font-mono text-xs">{sale.id.substring(0, 8)}...</TableCell>
+                                  <TableCell className="font-medium">{sale.productName || sale.product?.name}</TableCell>
+                                  <TableCell>{sale.buyerName || (sale.user?.firstName + ' ' + sale.user?.lastName)}</TableCell>
+                                  <TableCell>{sale.quantity} {sale.unit || sale.product?.unit || 'kg'}</TableCell>
+                                  <TableCell className="font-bold text-primary">₹{sale.totalPrice || sale.price}</TableCell>
+                                  <TableCell className="text-muted-foreground">
+                                    {new Date(sale.orderDate || sale.createdAt || Date.now()).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="secondary" className="bg-primary/10 text-primary capitalize">
+                                      {sale.status?.toLowerCase() || 'completed'}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -916,9 +992,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={isUpdatingProduct} className="w-full">
-                    {isUpdatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
-                  </Button>
+                  <Button type="submit" className="w-full">Save Changes</Button>
                 </DialogFooter>
               </form>
             )}
@@ -949,9 +1023,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isUpdatingProduct} className="w-full h-11">
-                  {isUpdatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Stock Levels"}
-                </Button>
+                <Button type="submit" className="w-full h-11">Update Stock Levels</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -967,16 +1039,12 @@ export default function DashboardPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeletingProduct}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
-                onClick={(e) => {
-                  e.preventDefault();
-                  confirmDeleteProduct();
-                }}
+                onClick={confirmDeleteProduct}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={isDeletingProduct}
               >
-                {isDeletingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete Yield"}
+                Delete Yield
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
