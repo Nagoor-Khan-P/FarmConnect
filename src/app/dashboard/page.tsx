@@ -26,7 +26,8 @@ import {
   Trash2,
   RefreshCcw,
   Pencil,
-  Box
+  Box,
+  Home
 } from "lucide-react";
 import { 
   Dialog, 
@@ -70,10 +71,17 @@ export default function DashboardPage() {
   const [hasFarm, setHasFarm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingFarm, setIsLoadingFarm] = useState(true);
+  const [isEditingFarm, setIsEditingFarm] = useState(false);
+  
   const [farmData, setFarmData] = useState({
     name: "",
-    address: "",
-    description: ""
+    description: "",
+    address: {
+      street: "",
+      city: "",
+      state: "",
+      zipCode: ""
+    }
   });
 
   // Product Management State
@@ -121,8 +129,8 @@ export default function DashboardPage() {
         if (data && data.name) {
           setFarmData({
             name: data.name,
-            address: data.address,
-            description: data.description
+            description: data.description,
+            address: data.address || { street: "", city: "", state: "", zipCode: "" }
           });
           setHasFarm(true);
         }
@@ -215,35 +223,37 @@ export default function DashboardPage() {
     e.preventDefault();
     setIsSaving(true);
 
+    const url = hasFarm 
+      ? 'http://localhost:8080/api/farms/my-farm' 
+      : 'http://localhost:8080/api/farms/register';
+    const method = hasFarm ? 'PUT' : 'POST';
+
     try {
-      const response = await fetch('http://localhost:8080/api/farms/register', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token || '',
         },
-        body: JSON.stringify({
-          name: farmData.name,
-          address: farmData.address,
-          description: farmData.description
-        }),
+        body: JSON.stringify(farmData),
       });
 
       if (response.ok) {
         setHasFarm(true);
+        setIsEditingFarm(false);
         toast({
-          title: "Farm Registered!",
-          description: "Your farm storefront has been successfully created.",
+          title: hasFarm ? "Farm Updated" : "Farm Registered!",
+          description: hasFarm ? "Your farm details have been updated." : "Your farm storefront has been successfully created.",
         });
         fetchFarmDetails();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to register farm");
+        throw new Error(errorData.message || "Failed to save farm details");
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Registration Failed",
+        title: "Action Failed",
         description: error.message || "Could not connect to the server.",
       });
     } finally {
@@ -253,11 +263,6 @@ export default function DashboardPage() {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    const loadingToast = toast({
-      title: "Adding Yield",
-      description: "Listing your product on the marketplace...",
-    });
-
     try {
       const response = await fetch('http://localhost:8080/api/products', {
         method: 'POST',
@@ -354,7 +359,6 @@ export default function DashboardPage() {
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        // If 403, specifically mention preflight/security configuration
         const description = response.status === 403 
           ? "Preflight check failed (CORS/Security). Please ensure your Spring Boot backend allows OPTIONS requests globally."
           : (errorData.message || "Failed to update stock.");
@@ -506,11 +510,13 @@ export default function DashboardPage() {
                       <Card className="flex items-center justify-center py-20">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       </Card>
-                    ) : !hasFarm ? (
+                    ) : (!hasFarm || isEditingFarm) ? (
                       <Card className="border-t-4 border-t-primary shadow-lg">
                         <CardHeader>
-                          <CardTitle>Register Your Farm</CardTitle>
-                          <CardDescription>Enter your farm details to start listing your yields.</CardDescription>
+                          <CardTitle>{hasFarm ? "Edit Farm Details" : "Register Your Farm"}</CardTitle>
+                          <CardDescription>
+                            {hasFarm ? "Update your farm's public information." : "Enter your farm details to start listing your yields."}
+                          </CardDescription>
                         </CardHeader>
                         <form onSubmit={handleSaveFarm}>
                           <CardContent className="space-y-4">
@@ -524,21 +530,70 @@ export default function DashboardPage() {
                                 onChange={(e) => setFarmData({...farmData, name: e.target.value})}
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="address">Address</Label>
-                              <div className="relative">
-                                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                  id="address" 
-                                  className="pl-9" 
-                                  placeholder="e.g. 123 Farm Road, Countryside" 
-                                  required 
-                                  value={farmData.address}
-                                  onChange={(e) => setFarmData({...farmData, address: e.target.value})}
-                                />
+                            
+                            <div className="space-y-4 pt-2">
+                              <h4 className="text-sm font-bold flex items-center gap-2">
+                                <Home className="h-4 w-4 text-primary" /> Farm Address
+                              </h4>
+                              <div className="grid grid-cols-1 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="street">Street Address</Label>
+                                  <Input 
+                                    id="street" 
+                                    placeholder="123 Farm Road" 
+                                    required 
+                                    value={farmData.address.street}
+                                    onChange={(e) => setFarmData({
+                                      ...farmData, 
+                                      address: { ...farmData.address, street: e.target.value }
+                                    })}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="city">City</Label>
+                                    <Input 
+                                      id="city" 
+                                      placeholder="City" 
+                                      required 
+                                      value={farmData.address.city}
+                                      onChange={(e) => setFarmData({
+                                        ...farmData, 
+                                        address: { ...farmData.address, city: e.target.value }
+                                      })}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="state">State</Label>
+                                    <Input 
+                                      id="state" 
+                                      placeholder="State" 
+                                      required 
+                                      value={farmData.address.state}
+                                      onChange={(e) => setFarmData({
+                                        ...farmData, 
+                                        address: { ...farmData.address, state: e.target.value }
+                                      })}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="zip">Zip Code</Label>
+                                    <Input 
+                                      id="zip" 
+                                      placeholder="12345" 
+                                      required 
+                                      value={farmData.address.zipCode}
+                                      onChange={(e) => setFarmData({
+                                        ...farmData, 
+                                        address: { ...farmData.address, zipCode: e.target.value }
+                                      })}
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            <div className="space-y-2">
+
+                            <div className="space-y-2 pt-2">
                               <Label htmlFor="desc">Farm Story</Label>
                               <textarea 
                                 id="desc" 
@@ -549,14 +604,19 @@ export default function DashboardPage() {
                               />
                             </div>
                           </CardContent>
-                          <CardFooter>
-                            <Button type="submit" className="w-full font-bold h-11" disabled={isSaving}>
+                          <CardFooter className="gap-3">
+                            {isEditingFarm && (
+                              <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditingFarm(false)}>
+                                Cancel
+                              </Button>
+                            )}
+                            <Button type="submit" className="flex-[2] font-bold h-11" disabled={isSaving}>
                               {isSaving ? (
                                 <>
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Registering Farm...
+                                  Saving...
                                 </>
-                              ) : "Launch Farm Storefront"}
+                              ) : hasFarm ? "Update Farm Profile" : "Launch Farm Storefront"}
                             </Button>
                           </CardFooter>
                         </form>
@@ -567,10 +627,11 @@ export default function DashboardPage() {
                           <div>
                             <CardTitle className="text-2xl">{farmData.name}</CardTitle>
                             <CardDescription className="flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" /> {farmData.address}
+                              <MapPin className="h-3 w-3" /> 
+                              {farmData.address.street}, {farmData.address.city}, {farmData.address.state} {farmData.address.zipCode}
                             </CardDescription>
                           </div>
-                          <Button variant="outline" size="sm" onClick={() => setHasFarm(false)}>Edit Profile</Button>
+                          <Button variant="outline" size="sm" onClick={() => setIsEditingFarm(true)}>Edit Profile</Button>
                         </CardHeader>
                         <CardContent>
                           <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
@@ -1053,3 +1114,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
