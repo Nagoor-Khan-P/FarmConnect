@@ -23,7 +23,9 @@ import {
   CheckCircle2,
   Loader2,
   Trash2,
-  RefreshCcw
+  RefreshCcw,
+  Pencil,
+  Box
 } from "lucide-react";
 import { 
   Dialog, 
@@ -67,7 +69,11 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [isProductsLoading, setIsProductsLoading] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
+  
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
@@ -77,6 +83,9 @@ export default function DashboardPage() {
     quantity: 10,
     image: "https://picsum.photos/seed/product/400/300"
   });
+
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [stockUpdate, setStockUpdate] = useState({ id: "", quantity: 0 });
 
   const isFarmer = user?.roles.includes('ROLE_FARMER');
 
@@ -239,6 +248,79 @@ export default function DashboardPage() {
     }
   };
 
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setIsUpdatingProduct(true);
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token || '',
+        },
+        body: JSON.stringify(editingProduct),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Yield Updated",
+          description: `${editingProduct.name} details have been updated.`,
+        });
+        setIsEditDialogOpen(false);
+        fetchMyProducts();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update yield");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsUpdatingProduct(false);
+    }
+  };
+
+  const handleUpdateStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdatingProduct(true);
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${stockUpdate.id}/stock`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token || '',
+        },
+        body: JSON.stringify(stockUpdate.quantity),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Stock Updated",
+          description: "Inventory quantity has been adjusted.",
+        });
+        setIsStockDialogOpen(false);
+        fetchMyProducts();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update stock");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsUpdatingProduct(false);
+    }
+  };
+
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this yield?")) return;
 
@@ -252,11 +334,31 @@ export default function DashboardPage() {
         toast({ title: "Yield Deleted" });
         fetchMyProducts();
       } else {
-        throw new Error("Failed to delete product");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete product");
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed to delete", description: error.message });
     }
+  };
+
+  const openEditDialog = (product: any) => {
+    setEditingProduct({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      unit: product.unit,
+      quantity: product.quantity,
+      image: product.image || "https://picsum.photos/seed/product/400/300"
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openStockDialog = (product: any) => {
+    setStockUpdate({ id: product.id, quantity: product.quantity });
+    setIsStockDialogOpen(true);
   };
 
   if (!user) return null;
@@ -591,14 +693,35 @@ export default function DashboardPage() {
                                   <TableCell>₹{p.price} / {p.unit}</TableCell>
                                   <TableCell>{p.quantity}</TableCell>
                                   <TableCell className="text-right">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="text-destructive"
-                                      onClick={() => handleDeleteProduct(p.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex justify-end gap-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="text-primary"
+                                        onClick={() => openStockDialog(p)}
+                                        title="Quick Stock Update"
+                                      >
+                                        <Box className="h-4 w-4" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="text-muted-foreground"
+                                        onClick={() => openEditDialog(p)}
+                                        title="Edit Yield"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="text-destructive"
+                                        onClick={() => handleDeleteProduct(p.id)}
+                                        title="Delete Yield"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -695,6 +818,116 @@ export default function DashboardPage() {
             </Tabs>
           </div>
         </div>
+
+        {/* Edit Yield Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            {editingProduct && (
+              <form onSubmit={handleUpdateProduct}>
+                <DialogHeader>
+                  <DialogTitle>Edit Yield: {editingProduct.name}</DialogTitle>
+                  <DialogDescription>Update the details of your harvest listing.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-prod-name">Yield Name</Label>
+                      <Input 
+                        id="edit-prod-name" 
+                        required
+                        value={editingProduct.name}
+                        onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-prod-cat">Category</Label>
+                      <select 
+                        id="edit-prod-cat"
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={editingProduct.category}
+                        onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
+                      >
+                        <option>Vegetables</option>
+                        <option>Fruits</option>
+                        <option>Dairy & Eggs</option>
+                        <option>Bakery</option>
+                        <option>Pantry</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-prod-price">Price (₹)</Label>
+                      <Input 
+                        id="edit-prod-price" 
+                        type="number" 
+                        required
+                        value={editingProduct.price}
+                        onChange={(e) => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-prod-unit">Unit</Label>
+                      <Input 
+                        id="edit-prod-unit" 
+                        required
+                        value={editingProduct.unit}
+                        onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-prod-desc">Description</Label>
+                    <textarea 
+                      id="edit-prod-desc"
+                      className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      required
+                      value={editingProduct.description}
+                      onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={isUpdatingProduct}>
+                    {isUpdatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Update Stock Dialog */}
+        <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <form onSubmit={handleUpdateStock}>
+              <DialogHeader>
+                <DialogTitle>Update Inventory Stock</DialogTitle>
+                <DialogDescription>Adjust the available quantity for this yield.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-6">
+                <div className="space-y-2">
+                  <Label htmlFor="stock-qty">Current Stock Quantity</Label>
+                  <div className="flex items-center gap-4">
+                    <Input 
+                      id="stock-qty" 
+                      type="number" 
+                      required
+                      className="text-lg font-bold"
+                      value={stockUpdate.quantity}
+                      onChange={(e) => setStockUpdate({...stockUpdate, quantity: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isUpdatingProduct} className="w-full">
+                  {isUpdatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Stock Levels"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
