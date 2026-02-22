@@ -108,6 +108,7 @@ export default function DashboardPage() {
     category: "Vegetables",
     unit: "kg",
     quantity: 10,
+    farmId: "",
     image: "https://picsum.photos/seed/product/400/300"
   });
 
@@ -130,25 +131,21 @@ export default function DashboardPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setFarms(Array.isArray(data) ? data : [data]);
+        const farmsList = Array.isArray(data) ? data : [data];
+        setFarms(farmsList);
+        // Pre-select first farm for new products if available
+        if (farmsList.length > 0 && !newProduct.farmId) {
+          setNewProduct(prev => ({ ...prev, farmId: farmsList[0].id }));
+        }
       } else if (response.status === 404) {
         setFarms([]);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        if (response.status === 403) {
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "You don't have permission to view these farms.",
-          });
-        }
       }
     } catch (error) {
       console.error("Error fetching farms:", error);
     } finally {
       setIsLoadingFarms(false);
     }
-  }, [token, toast]);
+  }, [token, newProduct.farmId]);
 
   const fetchMyProducts = useCallback(async () => {
     if (!token) return;
@@ -160,20 +157,13 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         setProducts(Array.isArray(data) ? data : []);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast({
-          variant: "destructive",
-          title: "Inventory Load Failed",
-          description: errorData.message || "Could not retrieve your listed yields.",
-        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setIsProductsLoading(false);
     }
-  }, [token, toast]);
+  }, [token]);
 
   const fetchMySales = useCallback(async () => {
     if (!token) return;
@@ -284,33 +274,13 @@ export default function DashboardPage() {
     }
   };
 
-  const openAddFarmDialog = () => {
-    setEditingFarm(null);
-    setFarmFormData({
-      name: "",
-      description: "",
-      address: { street: "", city: "", state: "", zipCode: "" }
-    });
-    setIsFarmDialogOpen(true);
-  };
-
-  const openEditFarmDialog = (farm: any) => {
-    setEditingFarm(farm);
-    setFarmFormData({
-      name: farm.name,
-      description: farm.description,
-      address: farm.address || { street: "", city: "", state: "", zipCode: "" }
-    });
-    setIsFarmDialogOpen(true);
-  };
-
-  const openDeleteFarmDialog = (farm: any) => {
-    setFarmToDelete(farm);
-    setIsFarmDeleteOpen(true);
-  };
-
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newProduct.farmId) {
+      toast({ variant: "destructive", title: "Missing Farm", description: "Please select a farm for this yield." });
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:8080/api/products', {
         method: 'POST',
@@ -331,6 +301,7 @@ export default function DashboardPage() {
           category: "Vegetables",
           unit: "kg",
           quantity: 10,
+          farmId: farms[0]?.id || "",
           image: "https://picsum.photos/seed/product/400/300"
         });
         fetchMyProducts();
@@ -427,6 +398,31 @@ export default function DashboardPage() {
     }
   };
 
+  const openAddFarmDialog = () => {
+    setEditingFarm(null);
+    setFarmFormData({
+      name: "",
+      description: "",
+      address: { street: "", city: "", state: "", zipCode: "" }
+    });
+    setIsFarmDialogOpen(true);
+  };
+
+  const openEditFarmDialog = (farm: any) => {
+    setEditingFarm(farm);
+    setFarmFormData({
+      name: farm.name,
+      description: farm.description,
+      address: farm.address || { street: "", city: "", state: "", zipCode: "" }
+    });
+    setIsFarmDialogOpen(true);
+  };
+
+  const openDeleteFarmDialog = (farm: any) => {
+    setFarmToDelete(farm);
+    setIsFarmDeleteOpen(true);
+  };
+
   if (!user) return null;
 
   return (
@@ -469,13 +465,6 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-muted-foreground mt-1">Welcome back, {user.username}!</p>
               </div>
-              {!isFarmer && (
-                <Button asChild className="gap-2 bg-primary hover:bg-primary/90 font-bold text-primary-foreground">
-                  <Link href="/explore">
-                    <ShoppingBag className="h-4 w-4" /> Start Shopping
-                  </Link>
-                </Button>
-              )}
             </div>
             
             <Tabs defaultValue={isFarmer ? "farm" : "orders"} className="space-y-6">
@@ -496,9 +485,6 @@ export default function DashboardPage() {
                   <>
                     <TabsTrigger value="orders" className="gap-2">
                       <ShoppingCart className="h-4 w-4" /> Recent Orders
-                    </TabsTrigger>
-                    <TabsTrigger value="wishlist" className="gap-2">
-                      <Heart className="h-4 w-4" /> Wishlist
                     </TabsTrigger>
                   </>
                 )}
@@ -597,6 +583,20 @@ export default function DashboardPage() {
                                   <DialogDescription>Fill in the details to list your fresh harvest.</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="prod-farm">Select Farm</Label>
+                                    <select 
+                                      id="prod-farm"
+                                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                      required
+                                      value={newProduct.farmId}
+                                      onChange={(e) => setNewProduct({...newProduct, farmId: e.target.value})}
+                                    >
+                                      {farms.map((f) => (
+                                        <option key={f.id} value={f.id}>{f.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
                                   <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                       <Label htmlFor="prod-name">Yield Name</Label>
@@ -681,15 +681,9 @@ export default function DashboardPage() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        {farms.length === 0 ? (
-                          <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
-                            <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">Please register a farm first to add yields.</p>
-                          </div>
-                        ) : isProductsLoading ? (
+                        {isProductsLoading ? (
                           <div className="flex flex-col items-center justify-center py-12 gap-4">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="text-sm text-muted-foreground">Loading your yields...</p>
                           </div>
                         ) : products.length === 0 ? (
                           <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
@@ -701,6 +695,7 @@ export default function DashboardPage() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Yield</TableHead>
+                                <TableHead>Farm</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Stock</TableHead>
@@ -711,6 +706,7 @@ export default function DashboardPage() {
                               {products.map((p) => (
                                 <TableRow key={p.id}>
                                   <TableCell className="font-medium">{p.name}</TableCell>
+                                  <TableCell className="text-xs text-muted-foreground">{p.farmer?.farm?.name || "No Farm"}</TableCell>
                                   <TableCell>{p.category}</TableCell>
                                   <TableCell>₹{p.price} / {p.unit}</TableCell>
                                   <TableCell>{p.quantity}</TableCell>
@@ -787,24 +783,6 @@ export default function DashboardPage() {
                             </TableBody>
                           </Table>
                         )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </>
-              )}
-
-              {!isFarmer && (
-                <>
-                  <TabsContent value="orders">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Your Orders</CardTitle>
-                        <CardDescription>Manage your recent farm-fresh purchases.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                          <p className="text-muted-foreground">No orders placed yet.</p>
-                        </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -965,6 +943,8 @@ export default function DashboardPage() {
                         <option>Vegetables</option>
                         <option>Fruits</option>
                         <option>Dairy & Eggs</option>
+                        <option>Bakery</option>
+                        <option>Pantry</option>
                       </select>
                     </div>
                   </div>
