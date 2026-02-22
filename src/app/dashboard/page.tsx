@@ -133,8 +133,8 @@ export default function DashboardPage() {
         const errorData = await response.json().catch(() => ({}));
         toast({
           variant: "destructive",
-          title: "Fetch Failed",
-          description: errorData.message || `Error ${response.status}: Could not load inventory.`,
+          title: "Inventory Load Failed",
+          description: errorData.message || `Error ${response.status}: Please ensure your backend is accessible.`,
         });
       }
     } catch (error) {
@@ -287,9 +287,12 @@ export default function DashboardPage() {
 
   const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!stockUpdate.id) return;
     setIsUpdatingProduct(true);
 
     try {
+      // NOTE: 403 Forbidden on OPTIONS request usually means Spring Security 
+      // needs .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() in backend config.
       const response = await fetch(`http://localhost:8080/api/products/${stockUpdate.id}/stock`, {
         method: 'PATCH',
         headers: {
@@ -308,12 +311,12 @@ export default function DashboardPage() {
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update stock");
+        throw new Error(errorData.message || "Failed to update stock. Check CORS/Preflight settings.");
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Failed",
+        title: "Stock Update Failed",
         description: error.message,
       });
     } finally {
@@ -327,7 +330,9 @@ export default function DashboardPage() {
     try {
       const response = await fetch(`http://localhost:8080/api/products/${productId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': token || '' }
+        headers: { 
+          'Authorization': token || '' 
+        }
       });
 
       if (response.ok) {
@@ -371,7 +376,7 @@ export default function DashboardPage() {
           <aside className="w-full md:w-64 space-y-4">
             <Card>
               <CardContent className="p-6 text-center">
-                <div className="h-20 w-20 rounded-full bg-primary/20 mx-auto mb-4 flex items-center justify-center">
+                <div className="h-20 w-20 rounded-full bg-primary/20 mx-auto mb-4 flex items-center justify-center border-2 border-primary/20">
                   <User className="h-10 w-10 text-primary" />
                 </div>
                 <h3 className="font-bold text-lg">{user.firstName} {user.lastName}</h3>
@@ -449,7 +454,7 @@ export default function DashboardPage() {
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       </Card>
                     ) : !hasFarm ? (
-                      <Card className="border-t-4 border-t-primary">
+                      <Card className="border-t-4 border-t-primary shadow-lg">
                         <CardHeader>
                           <CardTitle>Register Your Farm</CardTitle>
                           <CardDescription>Enter your farm details to start listing your yields.</CardDescription>
@@ -492,7 +497,7 @@ export default function DashboardPage() {
                             </div>
                           </CardContent>
                           <CardFooter>
-                            <Button type="submit" className="w-full font-bold" disabled={isSaving}>
+                            <Button type="submit" className="w-full font-bold h-11" disabled={isSaving}>
                               {isSaving ? (
                                 <>
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -504,10 +509,10 @@ export default function DashboardPage() {
                         </form>
                       </Card>
                     ) : (
-                      <Card className="border-t-4 border-t-primary">
+                      <Card className="border-t-4 border-t-primary shadow-md">
                         <CardHeader className="flex flex-row items-center justify-between">
                           <div>
-                            <CardTitle>{farmData.name}</CardTitle>
+                            <CardTitle className="text-2xl">{farmData.name}</CardTitle>
                             <CardDescription className="flex items-center gap-1 mt-1">
                               <MapPin className="h-3 w-3" /> {farmData.address}
                             </CardDescription>
@@ -522,15 +527,15 @@ export default function DashboardPage() {
                             </p>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-                            <div className="bg-muted p-4 rounded-lg text-center">
+                            <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
                               <p className="text-2xl font-bold">{products.length}</p>
                               <p className="text-xs text-muted-foreground uppercase">Active Yields</p>
                             </div>
-                            <div className="bg-muted p-4 rounded-lg text-center">
+                            <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
                               <p className="text-2xl font-bold">0</p>
                               <p className="text-xs text-muted-foreground uppercase">Monthly Sales</p>
                             </div>
-                            <div className="bg-muted p-4 rounded-lg text-center">
+                            <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
                               <p className="text-2xl font-bold">5.0</p>
                               <p className="text-xs text-muted-foreground uppercase">Rating</p>
                             </div>
@@ -541,7 +546,7 @@ export default function DashboardPage() {
                   </TabsContent>
 
                   <TabsContent value="inventory">
-                    <Card>
+                    <Card className="shadow-sm">
                       <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                           <CardTitle>Yield Inventory</CardTitle>
@@ -559,7 +564,7 @@ export default function DashboardPage() {
                           </Button>
                           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button disabled={!hasFarm} className="gap-2">
+                              <Button disabled={!hasFarm} className="gap-2 bg-primary hover:bg-primary/90 font-bold">
                                 <Plus className="h-4 w-4" /> Add New Yield
                               </Button>
                             </DialogTrigger>
@@ -646,7 +651,7 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button type="submit" disabled={isAddingProduct}>
+                                  <Button type="submit" disabled={isAddingProduct} className="w-full">
                                     {isAddingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "List Yield"}
                                   </Button>
                                 </DialogFooter>
@@ -697,7 +702,7 @@ export default function DashboardPage() {
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="text-primary"
+                                        className="text-primary hover:bg-primary/10"
                                         onClick={() => openStockDialog(p)}
                                         title="Quick Stock Update"
                                       >
@@ -706,7 +711,7 @@ export default function DashboardPage() {
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="text-muted-foreground"
+                                        className="text-muted-foreground hover:bg-muted"
                                         onClick={() => openEditDialog(p)}
                                         title="Edit Yield"
                                       >
@@ -715,7 +720,7 @@ export default function DashboardPage() {
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="text-destructive"
+                                        className="text-destructive hover:bg-destructive/10"
                                         onClick={() => handleDeleteProduct(p.id)}
                                         title="Delete Yield"
                                       >
@@ -888,7 +893,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={isUpdatingProduct}>
+                  <Button type="submit" disabled={isUpdatingProduct} className="w-full">
                     {isUpdatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
                   </Button>
                 </DialogFooter>
@@ -921,7 +926,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isUpdatingProduct} className="w-full">
+                <Button type="submit" disabled={isUpdatingProduct} className="w-full h-11">
                   {isUpdatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Stock Levels"}
                 </Button>
               </DialogFooter>
