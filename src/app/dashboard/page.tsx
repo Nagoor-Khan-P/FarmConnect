@@ -37,6 +37,16 @@ import {
   DialogTrigger 
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -70,9 +80,13 @@ export default function DashboardPage() {
   const [isProductsLoading, setIsProductsLoading] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+  
+  // Dialog States
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -86,6 +100,7 @@ export default function DashboardPage() {
 
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [stockUpdate, setStockUpdate] = useState({ id: "", quantity: 0 });
+  const [productToDelete, setProductToDelete] = useState<any>(null);
 
   const isFarmer = user?.roles.includes('ROLE_FARMER');
 
@@ -322,11 +337,12 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this yield?")) return;
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setIsDeletingProduct(true);
 
     try {
-      const response = await fetch(`http://localhost:8080/api/products/${productId}`, {
+      const response = await fetch(`http://localhost:8080/api/products/${productToDelete.id}`, {
         method: 'DELETE',
         headers: { 
           'Authorization': token || '' 
@@ -335,6 +351,8 @@ export default function DashboardPage() {
 
       if (response.ok) {
         toast({ title: "Yield Deleted" });
+        setIsDeleteConfirmOpen(false);
+        setProductToDelete(null);
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -342,7 +360,14 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed to delete", description: error.message });
+    } finally {
+      setIsDeletingProduct(false);
     }
+  };
+
+  const openDeleteDialog = (product: any) => {
+    setProductToDelete(product);
+    setIsDeleteConfirmOpen(true);
   };
 
   const openEditDialog = (product: any) => {
@@ -720,7 +745,7 @@ export default function DashboardPage() {
                                         variant="ghost" 
                                         size="icon" 
                                         className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                        onClick={() => handleDeleteProduct(p.id)}
+                                        onClick={() => openDeleteDialog(p)}
                                         title="Delete Yield"
                                       >
                                         <Trash2 className="h-4 w-4" />
@@ -932,6 +957,31 @@ export default function DashboardPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete <span className="font-bold text-foreground">"{productToDelete?.name}"</span> from your inventory and remove it from the marketplace. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingProduct}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={(e) => {
+                  e.preventDefault();
+                  confirmDeleteProduct();
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isDeletingProduct}
+              >
+                {isDeletingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete Yield"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
