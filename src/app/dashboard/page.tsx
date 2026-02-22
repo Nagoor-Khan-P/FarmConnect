@@ -68,12 +68,15 @@ export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [hasFarm, setHasFarm] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingFarm, setIsLoadingFarm] = useState(true);
-  const [isEditingFarm, setIsEditingFarm] = useState(false);
+  const [farms, setFarms] = useState<any[]>([]);
+  const [isSavingFarm, setIsSavingFarm] = useState(false);
+  const [isLoadingFarms, setIsLoadingFarms] = useState(true);
+  const [isFarmDialogOpen, setIsFarmDialogOpen] = useState(false);
+  const [editingFarm, setEditingFarm] = useState<any>(null);
+  const [farmToDelete, setFarmToDelete] = useState<any>(null);
+  const [isFarmDeleteOpen, setIsFarmDeleteOpen] = useState(false);
   
-  const [farmData, setFarmData] = useState({
+  const [farmFormData, setFarmFormData] = useState({
     name: "",
     description: "",
     address: {
@@ -114,8 +117,9 @@ export default function DashboardPage() {
 
   const isFarmer = user?.roles.includes('ROLE_FARMER');
 
-  const fetchFarmDetails = useCallback(async () => {
+  const fetchMyFarms = useCallback(async () => {
     if (!token) return;
+    setIsLoadingFarms(true);
     try {
       const response = await fetch('http://localhost:8080/api/farms/my-farm', {
         method: 'GET',
@@ -126,21 +130,14 @@ export default function DashboardPage() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data && data.name) {
-          setFarmData({
-            name: data.name,
-            description: data.description,
-            address: data.address || { street: "", city: "", state: "", zipCode: "" }
-          });
-          setHasFarm(true);
-        }
+        setFarms(Array.isArray(data) ? data : [data]);
       } else if (response.status === 404) {
-        setHasFarm(false);
+        setFarms([]);
       }
     } catch (error) {
-      console.error("Error fetching farm details:", error);
+      console.error("Error fetching farms:", error);
     } finally {
-      setIsLoadingFarm(false);
+      setIsLoadingFarms(false);
     }
   }, [token]);
 
@@ -154,25 +151,13 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         setProducts(Array.isArray(data) ? data : []);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast({
-          variant: "destructive",
-          title: "Inventory Load Failed",
-          description: errorData.message || `Error ${response.status}: Failed to fetch products.`,
-        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
-      toast({
-        variant: "destructive",
-        title: "Connection Error",
-        description: "Failed to connect to the product API.",
-      });
     } finally {
       setIsProductsLoading(false);
     }
-  }, [token, toast]);
+  }, [token]);
 
   const fetchMySales = useCallback(async () => {
     if (!token) return;
@@ -184,25 +169,13 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         setSales(Array.isArray(data) ? data : []);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast({
-          variant: "destructive",
-          title: "Sales Load Failed",
-          description: errorData.message || `Error ${response.status}: Failed to fetch sales history.`,
-        });
       }
     } catch (error) {
       console.error("Error fetching sales:", error);
-      toast({
-        variant: "destructive",
-        title: "Connection Error",
-        description: "Failed to connect to the sales API.",
-      });
     } finally {
       setIsSalesLoading(false);
     }
-  }, [token, toast]);
+  }, [token]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -211,22 +184,22 @@ export default function DashboardPage() {
     }
 
     if (isFarmer) {
-      fetchFarmDetails();
+      fetchMyFarms();
       fetchMyProducts();
       fetchMySales();
     } else {
-      setIsLoadingFarm(false);
+      setIsLoadingFarms(false);
     }
-  }, [isAuthenticated, isFarmer, fetchFarmDetails, fetchMyProducts, fetchMySales, router]);
+  }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchMySales, router]);
 
   const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
+    setIsSavingFarm(true);
 
-    const url = hasFarm 
-      ? 'http://localhost:8080/api/farms/my-farm' 
+    const url = editingFarm 
+      ? `http://localhost:8080/api/farms/my-farm` 
       : 'http://localhost:8080/api/farms/register';
-    const method = hasFarm ? 'PUT' : 'POST';
+    const method = editingFarm ? 'PUT' : 'POST';
 
     try {
       const response = await fetch(url, {
@@ -235,17 +208,22 @@ export default function DashboardPage() {
           'Content-Type': 'application/json',
           'Authorization': token || '',
         },
-        body: JSON.stringify(farmData),
+        body: JSON.stringify(farmFormData),
       });
 
       if (response.ok) {
-        setHasFarm(true);
-        setIsEditingFarm(false);
-        toast({
-          title: hasFarm ? "Farm Updated" : "Farm Registered!",
-          description: hasFarm ? "Your farm details have been updated." : "Your farm storefront has been successfully created.",
+        setIsFarmDialogOpen(false);
+        setEditingFarm(null);
+        setFarmFormData({
+          name: "",
+          description: "",
+          address: { street: "", city: "", state: "", zipCode: "" }
         });
-        fetchFarmDetails();
+        toast({
+          title: editingFarm ? "Farm Updated" : "Farm Registered!",
+          description: editingFarm ? "Your farm details have been updated." : "Your new farm has been successfully added.",
+        });
+        fetchMyFarms();
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to save farm details");
@@ -254,11 +232,65 @@ export default function DashboardPage() {
       toast({
         variant: "destructive",
         title: "Action Failed",
-        description: error.message || "Could not connect to the server.",
+        description: error.message,
       });
     } finally {
-      setIsSaving(false);
+      setIsSavingFarm(false);
     }
+  };
+
+  const handleConfirmDeleteFarm = async () => {
+    if (!farmToDelete || !user) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/farms/${farmToDelete.id}/farmer/${user.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': token || '',
+        },
+      });
+
+      if (response.ok) {
+        toast({ title: "Farm Deleted", description: "The farm storefront has been removed." });
+        setIsFarmDeleteOpen(false);
+        setFarmToDelete(null);
+        fetchMyFarms();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete farm");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Delete Failed",
+        description: error.message,
+      });
+    }
+  };
+
+  const openAddFarmDialog = () => {
+    setEditingFarm(null);
+    setFarmFormData({
+      name: "",
+      description: "",
+      address: { street: "", city: "", state: "", zipCode: "" }
+    });
+    setIsFarmDialogOpen(true);
+  };
+
+  const openEditFarmDialog = (farm: any) => {
+    setEditingFarm(farm);
+    setFarmFormData({
+      name: farm.name,
+      description: farm.description,
+      address: farm.address || { street: "", city: "", state: "", zipCode: "" }
+    });
+    setIsFarmDialogOpen(true);
+  };
+
+  const openDeleteFarmDialog = (farm: any) => {
+    setFarmToDelete(farm);
+    setIsFarmDeleteOpen(true);
   };
 
   const handleAddProduct = async (e: React.FormEvent) => {
@@ -274,10 +306,7 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Yield Added",
-          description: `${newProduct.name} is now live!`,
-        });
+        toast({ title: "Yield Added", description: `${newProduct.name} is now live!` });
         setIsDialogOpen(false);
         setNewProduct({
           name: "",
@@ -294,11 +323,7 @@ export default function DashboardPage() {
         throw new Error(errorData.message || "Failed to add product");
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
+      toast({ variant: "destructive", title: "Error", description: error.message });
     }
   };
 
@@ -317,10 +342,7 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Yield Updated",
-          description: `${editingProduct.name} details have been updated.`,
-        });
+        toast({ title: "Yield Updated", description: `${editingProduct.name} details have been updated.` });
         setIsEditDialogOpen(false);
         fetchMyProducts();
       } else {
@@ -328,11 +350,7 @@ export default function DashboardPage() {
         throw new Error(errorData.message || "Failed to update yield");
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: error.message,
-      });
+      toast({ variant: "destructive", title: "Update Failed", description: error.message });
     }
   };
 
@@ -351,26 +369,15 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Stock Updated",
-          description: "Inventory quantity has been adjusted.",
-        });
+        toast({ title: "Stock Updated", description: "Inventory quantity adjusted." });
         setIsStockDialogOpen(false);
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        const description = response.status === 403 
-          ? "Preflight check failed (CORS/Security). Please ensure your Spring Boot backend allows OPTIONS requests globally."
-          : (errorData.message || "Failed to update stock.");
-        
-        throw new Error(description);
+        throw new Error(errorData.message || "Failed to update stock");
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Stock Update Failed",
-        description: error.message,
-      });
+      toast({ variant: "destructive", title: "Stock Update Failed", description: error.message });
     }
   };
 
@@ -380,9 +387,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch(`http://localhost:8080/api/products/${productToDelete.id}`, {
         method: 'DELETE',
-        headers: { 
-          'Authorization': token || '' 
-        }
+        headers: { 'Authorization': token || '' }
       });
 
       if (response.ok) {
@@ -397,30 +402,6 @@ export default function DashboardPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed to delete", description: error.message });
     }
-  };
-
-  const openDeleteDialog = (product: any) => {
-    setProductToDelete(product);
-    setIsDeleteConfirmOpen(true);
-  };
-
-  const openEditDialog = (product: any) => {
-    setEditingProduct({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      category: product.category,
-      unit: product.unit,
-      quantity: product.quantity,
-      image: product.image || "https://picsum.photos/seed/product/400/300"
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const openStockDialog = (product: any) => {
-    setStockUpdate({ id: product.id, quantity: product.quantity });
-    setIsStockDialogOpen(true);
   };
 
   if (!user) return null;
@@ -479,7 +460,7 @@ export default function DashboardPage() {
                 {isFarmer ? (
                   <>
                     <TabsTrigger value="farm" className="gap-2">
-                      <Store className="h-4 w-4" /> My Farm
+                      <Store className="h-4 w-4" /> My Farms
                     </TabsTrigger>
                     <TabsTrigger value="inventory" className="gap-2">
                       <Package className="h-4 w-4" /> Inventory
@@ -506,156 +487,61 @@ export default function DashboardPage() {
               {isFarmer && (
                 <>
                   <TabsContent value="farm">
-                    {isLoadingFarm ? (
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-bold font-headline">Manage Your Farm Storefronts</h3>
+                      <Button onClick={openAddFarmDialog} className="gap-2">
+                        <Plus className="h-4 w-4" /> Add Another Farm
+                      </Button>
+                    </div>
+
+                    {isLoadingFarms ? (
                       <Card className="flex items-center justify-center py-20">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       </Card>
-                    ) : (!hasFarm || isEditingFarm) ? (
-                      <Card className="border-t-4 border-t-primary shadow-lg">
-                        <CardHeader>
-                          <CardTitle>{hasFarm ? "Edit Farm Details" : "Register Your Farm"}</CardTitle>
-                          <CardDescription>
-                            {hasFarm ? "Update your farm's public information." : "Enter your farm details to start listing your yields."}
-                          </CardDescription>
-                        </CardHeader>
-                        <form onSubmit={handleSaveFarm}>
-                          <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="farm-name">Farm Name</Label>
-                              <Input 
-                                id="farm-name" 
-                                placeholder="e.g. Green Valley Organic Farm" 
-                                required 
-                                value={farmData.name}
-                                onChange={(e) => setFarmData({...farmData, name: e.target.value})}
-                              />
-                            </div>
-                            
-                            <div className="space-y-4 pt-2">
-                              <h4 className="text-sm font-bold flex items-center gap-2">
-                                <Home className="h-4 w-4 text-primary" /> Farm Address
-                              </h4>
-                              <div className="grid grid-cols-1 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="street">Street Address</Label>
-                                  <Input 
-                                    id="street" 
-                                    placeholder="123 Farm Road" 
-                                    required 
-                                    value={farmData.address.street}
-                                    onChange={(e) => setFarmData({
-                                      ...farmData, 
-                                      address: { ...farmData.address, street: e.target.value }
-                                    })}
-                                  />
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="city">City</Label>
-                                    <Input 
-                                      id="city" 
-                                      placeholder="City" 
-                                      required 
-                                      value={farmData.address.city}
-                                      onChange={(e) => setFarmData({
-                                        ...farmData, 
-                                        address: { ...farmData.address, city: e.target.value }
-                                      })}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="state">State</Label>
-                                    <Input 
-                                      id="state" 
-                                      placeholder="State" 
-                                      required 
-                                      value={farmData.address.state}
-                                      onChange={(e) => setFarmData({
-                                        ...farmData, 
-                                        address: { ...farmData.address, state: e.target.value }
-                                      })}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="zip">Zip Code</Label>
-                                    <Input 
-                                      id="zip" 
-                                      placeholder="12345" 
-                                      required 
-                                      value={farmData.address.zipCode}
-                                      onChange={(e) => setFarmData({
-                                        ...farmData, 
-                                        address: { ...farmData.address, zipCode: e.target.value }
-                                      })}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-2 pt-2">
-                              <Label htmlFor="desc">Farm Story</Label>
-                              <textarea 
-                                id="desc" 
-                                className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                                placeholder="Tell us about your organic vegetables and fruits..."
-                                value={farmData.description}
-                                onChange={(e) => setFarmData({...farmData, description: e.target.value})}
-                              />
-                            </div>
-                          </CardContent>
-                          <CardFooter className="gap-3">
-                            {isEditingFarm && (
-                              <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditingFarm(false)}>
-                                Cancel
-                              </Button>
-                            )}
-                            <Button type="submit" className="flex-[2] font-bold h-11" disabled={isSaving}>
-                              {isSaving ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Saving...
-                                </>
-                              ) : hasFarm ? "Update Farm Profile" : "Launch Farm Storefront"}
-                            </Button>
-                          </CardFooter>
-                        </form>
+                    ) : farms.length === 0 ? (
+                      <Card className="text-center py-20 border-2 border-dashed">
+                        <Store className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <h4 className="text-lg font-bold">No Farms Registered</h4>
+                        <p className="text-muted-foreground mb-6">Register your first farm to start selling.</p>
+                        <Button onClick={openAddFarmDialog}>Register Now</Button>
                       </Card>
                     ) : (
-                      <Card className="border-t-4 border-t-primary shadow-md">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                          <div>
-                            <CardTitle className="text-2xl">{farmData.name}</CardTitle>
-                            <CardDescription className="flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" /> 
-                              {farmData.address.street}, {farmData.address.city}, {farmData.address.state} {farmData.address.zipCode}
-                            </CardDescription>
-                          </div>
-                          <Button variant="outline" size="sm" onClick={() => setIsEditingFarm(true)}>Edit Profile</Button>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-primary mb-2">Our Story</h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {farmData.description || "No description provided yet."}
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-                            <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
-                              <p className="text-2xl font-bold">{products.length}</p>
-                              <p className="text-xs text-muted-foreground uppercase">Active Yields</p>
-                            </div>
-                            <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
-                              <p className="text-2xl font-bold">{sales.length}</p>
-                              <p className="text-xs text-muted-foreground uppercase">Total Sales</p>
-                            </div>
-                            <div className="bg-muted p-4 rounded-lg text-center border border-transparent hover:border-primary/20 transition-colors">
-                              <p className="text-2xl font-bold">5.0</p>
-                              <p className="text-xs text-muted-foreground uppercase">Rating</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <div className="grid grid-cols-1 gap-6">
+                        {farms.map((farm) => (
+                          <Card key={farm.id} className="border-t-4 border-t-primary shadow-md overflow-hidden">
+                            <CardHeader className="flex flex-row items-start justify-between bg-primary/5">
+                              <div>
+                                <CardTitle className="text-2xl">{farm.name}</CardTitle>
+                                <CardDescription className="flex items-center gap-1 mt-1">
+                                  <MapPin className="h-3 w-3" /> 
+                                  {farm.address?.street}, {farm.address?.city}, {farm.address?.state} {farm.address?.zipCode}
+                                </CardDescription>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => openEditFarmDialog(farm)}>
+                                  <Pencil className="h-4 w-4 mr-1" /> Edit
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={() => openDeleteFarmDialog(farm)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" /> Delete
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                              <div className="bg-muted p-4 rounded-lg">
+                                <h4 className="text-sm font-bold uppercase tracking-wider text-primary mb-2">Our Story</h4>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {farm.description || "No description provided yet."}
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     )}
                   </TabsContent>
 
@@ -671,14 +557,13 @@ export default function DashboardPage() {
                             variant="outline" 
                             size="icon" 
                             onClick={fetchMyProducts} 
-                            disabled={isProductsLoading || !hasFarm}
-                            title="Refresh Inventory"
+                            disabled={isProductsLoading}
                           >
                             <RefreshCcw className={`h-4 w-4 ${isProductsLoading ? 'animate-spin' : ''}`} />
                           </Button>
                           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button disabled={!hasFarm} className="gap-2 bg-primary hover:bg-primary/90 font-bold">
+                              <Button disabled={farms.length === 0} className="gap-2 bg-primary hover:bg-primary/90 font-bold">
                                 <Plus className="h-4 w-4" /> Add New Yield
                               </Button>
                             </DialogTrigger>
@@ -773,10 +658,10 @@ export default function DashboardPage() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        {!hasFarm ? (
+                        {farms.length === 0 ? (
                           <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
                             <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">Please register your farm first to add yields.</p>
+                            <p className="text-muted-foreground">Please register a farm first to add yields.</p>
                           </div>
                         ) : isProductsLoading ? (
                           <div className="flex flex-col items-center justify-center py-12 gap-4">
@@ -808,31 +693,13 @@ export default function DashboardPage() {
                                   <TableCell>{p.quantity}</TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={() => openStockDialog(p)}
-                                        title="Quick Stock Update"
-                                      >
+                                      <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10" onClick={() => { setStockUpdate({ id: p.id, quantity: p.quantity }); setIsStockDialogOpen(true); }}>
                                         <Box className="h-4 w-4" />
                                       </Button>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="text-muted-foreground hover:bg-muted hover:text-foreground"
-                                        onClick={() => openEditDialog(p)}
-                                        title="Edit Yield"
-                                      >
+                                      <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => { setEditingProduct(p); setIsEditDialogOpen(true); }}>
                                         <Pencil className="h-4 w-4" />
                                       </Button>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                        onClick={() => openDeleteDialog(p)}
-                                        title="Delete Yield"
-                                      >
+                                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
                                         <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </div>
@@ -851,15 +718,9 @@ export default function DashboardPage() {
                       <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                           <CardTitle>Farm Sales</CardTitle>
-                          <CardDescription>Track orders from buyers for your farm yields.</CardDescription>
+                          <CardDescription>Track orders from buyers.</CardDescription>
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
-                          onClick={fetchMySales} 
-                          disabled={isSalesLoading}
-                          title="Refresh Sales"
-                        >
+                        <Button variant="outline" size="icon" onClick={fetchMySales} disabled={isSalesLoading}>
                           <RefreshCcw className={`h-4 w-4 ${isSalesLoading ? 'animate-spin' : ''}`} />
                         </Button>
                       </CardHeader>
@@ -867,12 +728,11 @@ export default function DashboardPage() {
                         {isSalesLoading ? (
                           <div className="flex flex-col items-center justify-center py-12 gap-4">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="text-sm text-muted-foreground">Loading your sales history...</p>
                           </div>
                         ) : sales.length === 0 ? (
-                          <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
+                          <div className="text-center py-12 border-2 border-dashed rounded-lg">
                             <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">No sales activity yet. Your sales will appear here once buyers place orders.</p>
+                            <p className="text-muted-foreground">No sales activity yet.</p>
                           </div>
                         ) : (
                           <Table>
@@ -883,24 +743,20 @@ export default function DashboardPage() {
                                 <TableHead>Buyer</TableHead>
                                 <TableHead>Quantity</TableHead>
                                 <TableHead>Total</TableHead>
-                                <TableHead>Date</TableHead>
                                 <TableHead>Status</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {sales.map((sale) => (
                                 <TableRow key={sale.id}>
-                                  <TableCell className="font-mono text-xs">{sale.id.substring(0, 8)}...</TableCell>
+                                  <TableCell className="font-mono text-xs">{sale.id.substring(0, 8)}</TableCell>
                                   <TableCell className="font-medium">{sale.productName || sale.product?.name}</TableCell>
                                   <TableCell>{sale.buyerName || (sale.user?.firstName + ' ' + sale.user?.lastName)}</TableCell>
-                                  <TableCell>{sale.quantity} {sale.unit || sale.product?.unit || 'kg'}</TableCell>
-                                  <TableCell className="font-bold text-primary">₹{sale.totalPrice || sale.price}</TableCell>
-                                  <TableCell className="text-muted-foreground">
-                                    {new Date(sale.orderDate || sale.createdAt || Date.now()).toLocaleDateString()}
-                                  </TableCell>
+                                  <TableCell>{sale.quantity}</TableCell>
+                                  <TableCell className="font-bold text-primary">₹{sale.totalPrice}</TableCell>
                                   <TableCell>
-                                    <Badge variant="secondary" className="bg-primary/10 text-primary capitalize">
-                                      {sale.status?.toLowerCase() || 'completed'}
+                                    <Badge variant="secondary" className="bg-primary/10 text-primary uppercase text-[10px]">
+                                      {sale.status || 'Paid'}
                                     </Badge>
                                   </TableCell>
                                 </TableRow>
@@ -920,25 +776,11 @@ export default function DashboardPage() {
                     <Card>
                       <CardHeader>
                         <CardTitle>Your Orders</CardTitle>
-                        <CardDescription>Manage and track your recent farm-fresh purchases.</CardDescription>
+                        <CardDescription>Manage your recent farm-fresh purchases.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-center py-12 space-y-4 border-2 border-dashed rounded-lg">
-                          <p className="text-muted-foreground">No orders placed yet. Start exploring fresh yields!</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="wishlist">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Wishlist</CardTitle>
-                        <CardDescription>Your favorite yields saved for later.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                          Your wishlist is empty.
+                        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                          <p className="text-muted-foreground">No orders placed yet.</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -950,7 +792,7 @@ export default function DashboardPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>Manage your identity and roles on FarmConnect.</CardDescription>
+                    <CardDescription>Manage your identity on FarmConnect.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -966,16 +808,6 @@ export default function DashboardPage() {
                         <p className="text-xs font-bold text-muted-foreground uppercase">Email Address</p>
                         <p className="text-lg font-medium">{user.email}</p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-muted-foreground uppercase">Assigned Roles</p>
-                        <div className="flex gap-2 mt-1">
-                          {user.roles.map(role => (
-                            <span key={role} className="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" /> {role}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -984,129 +816,168 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Edit Yield Dialog */}
+        {/* Farm Add/Edit Dialog */}
+        <Dialog open={isFarmDialogOpen} onOpenChange={setIsFarmDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <form onSubmit={handleSaveFarm}>
+              <DialogHeader>
+                <DialogTitle>{editingFarm ? "Edit Farm Details" : "Register New Farm"}</DialogTitle>
+                <DialogDescription>
+                  {editingFarm ? "Update your farm's public information." : "Enter your farm details to start listing your yields."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="farm-name">Farm Name</Label>
+                  <Input 
+                    id="farm-name" 
+                    placeholder="e.g. Green Valley Organic Farm" 
+                    required 
+                    value={farmFormData.name}
+                    onChange={(e) => setFarmFormData({...farmFormData, name: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-sm font-bold flex items-center gap-2">
+                    <Home className="h-4 w-4 text-primary" /> Farm Address
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="street">Street Address</Label>
+                      <Input 
+                        id="street" 
+                        required 
+                        value={farmFormData.address.street}
+                        onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, street: e.target.value}})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input 
+                          id="city" 
+                          required 
+                          value={farmFormData.address.city}
+                          onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, city: e.target.value}})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="state">State</Label>
+                        <Input 
+                          id="state" 
+                          required 
+                          value={farmFormData.address.state}
+                          onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, state: e.target.value}})}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zip">Zip Code</Label>
+                      <Input 
+                        id="zip" 
+                        required 
+                        value={farmFormData.address.zipCode}
+                        onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, zipCode: e.target.value}})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="desc">Farm Story</Label>
+                  <textarea 
+                    id="desc" 
+                    className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder="Tell us about your farm..."
+                    value={farmFormData.description}
+                    onChange={(e) => setFarmFormData({...farmFormData, description: e.target.value})}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full font-bold h-11" disabled={isSavingFarm}>
+                  {isSavingFarm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingFarm ? "Update Farm Profile" : "Add Farm Storefront"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Farm Confirmation */}
+        <AlertDialog open={isFarmDeleteOpen} onOpenChange={setIsFarmDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the farm <span className="font-bold">"{farmToDelete?.name}"</span> and all its associated yields. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDeleteFarm} className="bg-destructive text-destructive-foreground">
+                Delete Farm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Product Dialogs (Edit/Stock/Delete) - Reusing existing implementations */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             {editingProduct && (
               <form onSubmit={handleUpdateProduct}>
                 <DialogHeader>
                   <DialogTitle>Edit Yield: {editingProduct.name}</DialogTitle>
-                  <DialogDescription>Update the details of your harvest listing.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="edit-prod-name">Yield Name</Label>
-                      <Input 
-                        id="edit-prod-name" 
-                        required
-                        value={editingProduct.name}
-                        onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
-                      />
+                      <Input id="edit-prod-name" required value={editingProduct.name} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-prod-cat">Category</Label>
-                      <select 
-                        id="edit-prod-cat"
-                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={editingProduct.category}
-                        onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
-                      >
+                      <select className="w-full h-10 rounded-md border bg-background px-3" value={editingProduct.category} onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}>
                         <option>Vegetables</option>
                         <option>Fruits</option>
                         <option>Dairy & Eggs</option>
-                        <option>Bakery</option>
-                        <option>Pantry</option>
                       </select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-prod-price">Price (₹)</Label>
-                      <Input 
-                        id="edit-prod-price" 
-                        type="number" 
-                        required
-                        value={editingProduct.price}
-                        onChange={(e) => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})}
-                      />
+                      <Label>Price (₹)</Label>
+                      <Input type="number" required value={editingProduct.price} onChange={(e) => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-prod-unit">Unit</Label>
-                      <Input 
-                        id="edit-prod-unit" 
-                        required
-                        value={editingProduct.unit}
-                        onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})}
-                      />
+                      <Label>Unit</Label>
+                      <Input required value={editingProduct.unit} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-prod-desc">Description</Label>
-                    <textarea 
-                      id="edit-prod-desc"
-                      className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      required
-                      value={editingProduct.description}
-                      onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})}
-                    />
-                  </div>
                 </div>
-                <DialogFooter>
-                  <Button type="submit" className="w-full">Save Changes</Button>
-                </DialogFooter>
+                <DialogFooter><Button type="submit" className="w-full">Save Changes</Button></DialogFooter>
               </form>
             )}
           </DialogContent>
         </Dialog>
 
-        {/* Update Stock Dialog */}
         <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
           <DialogContent className="sm:max-w-[400px]">
             <form onSubmit={handleUpdateStock}>
-              <DialogHeader>
-                <DialogTitle>Update Inventory Stock</DialogTitle>
-                <DialogDescription>Adjust the available quantity for this yield.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-6">
-                <div className="space-y-2">
-                  <Label htmlFor="stock-qty">Current Stock Quantity</Label>
-                  <div className="flex items-center gap-4">
-                    <Input 
-                      id="stock-qty" 
-                      type="number" 
-                      required
-                      className="text-lg font-bold"
-                      value={stockUpdate.quantity}
-                      onChange={(e) => setStockUpdate({...stockUpdate, quantity: parseInt(e.target.value) || 0})}
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" className="w-full h-11">Update Stock Levels</Button>
-              </DialogFooter>
+              <DialogHeader><DialogTitle>Update Inventory Stock</DialogTitle></DialogHeader>
+              <div className="py-6"><Input type="number" required value={stockUpdate.quantity} onChange={(e) => setStockUpdate({...stockUpdate, quantity: parseInt(e.target.value) || 0})} /></div>
+              <DialogFooter><Button type="submit" className="w-full">Update Stock</Button></DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
           <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete <span className="font-bold text-foreground">"{productToDelete?.name}"</span> from your inventory and remove it from the marketplace. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+            <AlertDialogHeader><AlertDialogTitle>Delete Yield?</AlertDialogTitle></AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={confirmDeleteProduct}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete Yield
-              </AlertDialogAction>
+              <AlertDialogAction onClick={confirmDeleteProduct} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -1114,4 +985,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
