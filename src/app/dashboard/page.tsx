@@ -41,10 +41,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/Table";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { AiYieldDescription } from "@/components/AiYieldDescription";
@@ -80,26 +80,13 @@ export default function DashboardPage() {
 
   const isFarmer = user?.roles.includes('ROLE_FARMER');
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth/login?redirect=/dashboard');
-      return;
-    }
-
-    if (isFarmer && token) {
-      fetchFarmDetails();
-      fetchMyProducts();
-    } else {
-      setIsLoadingFarm(false);
-    }
-  }, [isAuthenticated, isFarmer, token, router]);
-
-  const fetchFarmDetails = async () => {
+  const fetchFarmDetails = useCallback(async () => {
+    if (!token) return;
     try {
       const response = await fetch('http://localhost:8080/api/farms/my-farm', {
         method: 'GET',
         headers: {
-          'Authorization': token || '',
+          'Authorization': token,
         },
       });
 
@@ -119,13 +106,14 @@ export default function DashboardPage() {
     } finally {
       setIsLoadingFarm(false);
     }
-  };
+  }, [token]);
 
-  const fetchMyProducts = async () => {
+  const fetchMyProducts = useCallback(async () => {
+    if (!token) return;
     setIsProductsLoading(true);
     try {
       const response = await fetch('http://localhost:8080/api/products/my-products', {
-        headers: { 'Authorization': token || '' }
+        headers: { 'Authorization': token }
       });
       if (response.ok) {
         const data = await response.json();
@@ -136,7 +124,21 @@ export default function DashboardPage() {
     } finally {
       setIsProductsLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login?redirect=/dashboard');
+      return;
+    }
+
+    if (isFarmer) {
+      fetchFarmDetails();
+      fetchMyProducts();
+    } else {
+      setIsLoadingFarm(false);
+    }
+  }, [isAuthenticated, isFarmer, fetchFarmDetails, fetchMyProducts, router]);
 
   const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,6 +164,7 @@ export default function DashboardPage() {
           title: "Farm Registered!",
           description: "Your farm storefront has been successfully created.",
         });
+        fetchFarmDetails();
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to register farm");
@@ -208,7 +211,8 @@ export default function DashboardPage() {
         });
         fetchMyProducts();
       } else {
-        throw new Error("Failed to add product");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to add product");
       }
     } catch (error: any) {
       toast({
@@ -233,9 +237,11 @@ export default function DashboardPage() {
       if (response.ok) {
         toast({ title: "Yield Deleted" });
         fetchMyProducts();
+      } else {
+        throw new Error("Failed to delete product");
       }
-    } catch (error) {
-      toast({ variant: "destructive", title: "Failed to delete" });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Failed to delete", description: error.message });
     }
   };
 
