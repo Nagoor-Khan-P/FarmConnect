@@ -121,7 +121,7 @@ export default function DashboardPage() {
     if (!token) return;
     setIsLoadingFarms(true);
     try {
-      const response = await fetch('http://localhost:8080/api/farms/my-farm', {
+      const response = await fetch('http://localhost:8080/api/farms/my-farms', {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -133,13 +133,22 @@ export default function DashboardPage() {
         setFarms(Array.isArray(data) ? data : [data]);
       } else if (response.status === 404) {
         setFarms([]);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 403) {
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: "You don't have permission to view these farms.",
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching farms:", error);
     } finally {
       setIsLoadingFarms(false);
     }
-  }, [token]);
+  }, [token, toast]);
 
   const fetchMyProducts = useCallback(async () => {
     if (!token) return;
@@ -151,13 +160,20 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         setProducts(Array.isArray(data) ? data : []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast({
+          variant: "destructive",
+          title: "Inventory Load Failed",
+          description: errorData.message || "Could not retrieve your listed yields.",
+        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setIsProductsLoading(false);
     }
-  }, [token]);
+  }, [token, toast]);
 
   const fetchMySales = useCallback(async () => {
     if (!token) return;
@@ -374,10 +390,17 @@ export default function DashboardPage() {
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
+        if (response.status === 403) {
+          throw new Error("Action denied (403). Please ensure your backend permits OPTIONS preflight requests for the PATCH method.");
+        }
         throw new Error(errorData.message || "Failed to update stock");
       }
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Stock Update Failed", description: error.message });
+      toast({ 
+        variant: "destructive", 
+        title: "Stock Update Failed", 
+        description: error.message 
+      });
     }
   };
 
@@ -518,7 +541,7 @@ export default function DashboardPage() {
                                 </CardDescription>
                               </div>
                               <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => openEditFarmDialog(farm)}>
+                                <Button variant="outline" size="sm" onClick={() => openEditFarmDialog(farm)} className="hover:text-primary hover:bg-primary/5">
                                   <Pencil className="h-4 w-4 mr-1" /> Edit
                                 </Button>
                                 <Button 
@@ -696,10 +719,10 @@ export default function DashboardPage() {
                                       <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10" onClick={() => { setStockUpdate({ id: p.id, quantity: p.quantity }); setIsStockDialogOpen(true); }}>
                                         <Box className="h-4 w-4" />
                                       </Button>
-                                      <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => { setEditingProduct(p); setIsEditDialogOpen(true); }}>
+                                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/5" onClick={() => { setEditingProduct(p); setIsEditDialogOpen(true); }}>
                                         <Pencil className="h-4 w-4" />
                                       </Button>
-                                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
+                                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
                                         <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </div>
@@ -922,7 +945,7 @@ export default function DashboardPage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Product Dialogs (Edit/Stock/Delete) - Reusing existing implementations */}
+        {/* Product Dialogs (Edit/Stock/Delete) */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             {editingProduct && (
@@ -966,7 +989,10 @@ export default function DashboardPage() {
           <DialogContent className="sm:max-w-[400px]">
             <form onSubmit={handleUpdateStock}>
               <DialogHeader><DialogTitle>Update Inventory Stock</DialogTitle></DialogHeader>
-              <div className="py-6"><Input type="number" required value={stockUpdate.quantity} onChange={(e) => setStockUpdate({...stockUpdate, quantity: parseInt(e.target.value) || 0})} /></div>
+              <div className="py-6">
+                <Label className="mb-2 block">Quantity</Label>
+                <Input type="number" required value={stockUpdate.quantity} onChange={(e) => setStockUpdate({...stockUpdate, quantity: parseInt(e.target.value) || 0})} />
+              </div>
               <DialogFooter><Button type="submit" className="w-full">Update Stock</Button></DialogFooter>
             </form>
           </DialogContent>
@@ -974,7 +1000,12 @@ export default function DashboardPage() {
 
         <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
           <AlertDialogContent>
-            <AlertDialogHeader><AlertDialogTitle>Delete Yield?</AlertDialogTitle></AlertDialogHeader>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Yield?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove <span className="font-bold">"{productToDelete?.name}"</span> from your active listings? This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={confirmDeleteProduct} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
