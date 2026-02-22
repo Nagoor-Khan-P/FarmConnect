@@ -291,8 +291,8 @@ export default function DashboardPage() {
     setIsUpdatingProduct(true);
 
     try {
-      // NOTE: 403 Forbidden on OPTIONS request usually means Spring Security 
-      // needs .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() in backend config.
+      // The 403 Forbidden on preflight (OPTIONS) in your screenshot is a backend configuration issue.
+      // Ensure your Spring Security permits HttpMethod.OPTIONS for your API endpoints.
       const response = await fetch(`http://localhost:8080/api/products/${stockUpdate.id}/stock`, {
         method: 'PATCH',
         headers: {
