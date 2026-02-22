@@ -213,7 +213,7 @@ export default function DashboardPage() {
     setIsSavingFarm(true);
 
     const url = editingFarm 
-      ? `http://localhost:8080/api/farms/my-farm` 
+      ? `http://localhost:8080/api/farms/${editingFarm.id}` 
       : 'http://localhost:8080/api/farms/register';
     const method = editingFarm ? 'PUT' : 'POST';
 
