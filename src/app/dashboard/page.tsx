@@ -324,13 +324,13 @@ export default function DashboardPage() {
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update stock. Check CORS/Preflight settings.");
+        throw new Error(errorData.message || "Failed to update stock.");
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Stock Update Failed",
-        description: error.message || "CORS Error: Ensure your backend permits OPTIONS/PATCH methods in its Security configuration.",
+        description: error.message || "Could not connect to the server.",
       });
     } finally {
       setIsUpdatingProduct(false);
@@ -486,9 +486,8 @@ export default function DashboardPage() {
                           <CardContent className="space-y-4">
                             <div className="space-y-2">
                               <Label htmlFor="farm-name">Farm Name</Label>
-                              <input 
+                              <Input 
                                 id="farm-name" 
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 placeholder="e.g. Green Valley Organic Farm" 
                                 required 
                                 value={farmData.name}
@@ -499,9 +498,9 @@ export default function DashboardPage() {
                               <Label htmlFor="address">Address</Label>
                               <div className="relative">
                                 <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <input 
+                                <Input 
                                   id="address" 
-                                  className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm" 
+                                  className="pl-9" 
                                   placeholder="e.g. 123 Farm Road, Countryside" 
                                   required 
                                   value={farmData.address}
