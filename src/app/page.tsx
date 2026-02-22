@@ -1,13 +1,19 @@
 
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { YieldCard } from "@/components/YieldCard";
 import { AiRecommendations } from "@/components/AiRecommendations";
 import { Button } from "@/components/ui/button";
-import { Sprout, Users, Truck, ShieldCheck, ArrowRight, Leaf } from "lucide-react";
+import { Sprout, Users, Truck, ShieldCheck, ArrowRight, Leaf, LayoutDashboard, ShoppingBag, PlusCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
+  const { user, isAuthenticated } = useAuth();
+  const isFarmer = user?.roles.includes('ROLE_FARMER');
+
   const featuredYields = [
     {
       id: "y1",
@@ -76,20 +82,49 @@ export default function Home() {
           />
           <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-2xl text-white space-y-6">
-              <h1 className="text-5xl md:text-7xl font-bold font-headline leading-tight">
-                Fresh Farm Yields, <span className="text-primary italic">Delivered Direct</span>
-              </h1>
-              <p className="text-xl text-zinc-200 font-medium">
-                Support local farmers and get the freshest produce, dairy, and artisanal goods delivered from the farm straight to your doorstep.
-              </p>
-              <div className="flex flex-wrap gap-4 pt-4">
-                <Button size="lg" asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8">
-                  <Link href="/explore">Shop Now</Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild className="bg-transparent text-white border-white hover:bg-white/10 px-8">
-                  <Link href="/farmer/register">Register as Farmer</Link>
-                </Button>
-              </div>
+              {isFarmer ? (
+                <>
+                  <h1 className="text-5xl md:text-7xl font-bold font-headline leading-tight">
+                    Manage Your Harvest, <span className="text-primary italic">Grow Your Business</span>
+                  </h1>
+                  <p className="text-xl text-zinc-200 font-medium">
+                    Welcome back, {user?.firstName}! List your latest yields, track your orders, and reach thousands of local buyers directly from your farm.
+                  </p>
+                  <div className="flex flex-wrap gap-4 pt-4">
+                    <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8">
+                      <Link href="/dashboard" className="gap-2">
+                        <LayoutDashboard className="h-5 w-5" /> Go to Dashboard
+                      </Link>
+                    </Button>
+                    <Button size="lg" variant="outline" asChild className="bg-transparent text-white border-white hover:bg-white/10 px-8">
+                      <Link href="/dashboard?tab=inventory" className="gap-2">
+                        <PlusCircle className="h-5 w-5" /> Add New Yield
+                      </Link>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-5xl md:text-7xl font-bold font-headline leading-tight">
+                    Fresh Farm Yields, <span className="text-primary italic">Delivered Direct</span>
+                  </h1>
+                  <p className="text-xl text-zinc-200 font-medium">
+                    Support local farmers and get the freshest produce, dairy, and artisanal goods delivered from the farm straight to your doorstep.
+                  </p>
+                  <div className="flex flex-wrap gap-4 pt-4">
+                    <Button size="lg" asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8">
+                      <Link href="/explore" className="gap-2">
+                        <ShoppingBag className="h-5 w-5" /> Shop Now
+                      </Link>
+                    </Button>
+                    {!isAuthenticated && (
+                      <Button size="lg" variant="outline" asChild className="bg-transparent text-white border-white hover:bg-white/10 px-8">
+                        <Link href="/farmer/register">Register as Farmer</Link>
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -128,7 +163,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Featured Yields Section */}
+          {/* Featured Yields Section - Visible to All */}
           <section>
             <div className="flex items-end justify-between mb-8">
               <div>
@@ -146,32 +181,66 @@ export default function Home() {
             </div>
           </section>
 
-          {/* AI Recommendations Section */}
-          <AiRecommendations userId="user-123" />
+          {/* AI Recommendations Section - Personalized for logged in users */}
+          {isAuthenticated && <AiRecommendations userId={user?.id || "guest"} />}
 
-          {/* Call to Action Section */}
-          <section className="bg-primary/10 rounded-3xl p-12 overflow-hidden relative">
-            <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
-              <div className="flex-1 space-y-6">
-                <h2 className="text-4xl font-bold font-headline">Ready to start selling your yields?</h2>
-                <p className="text-lg text-muted-foreground">
-                  Join thousands of local farmers who are reaching more customers and growing their business with FarmConnect.
-                </p>
-                <Button size="lg" asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold">
-                  <Link href="/farmer/register">Become a Farmer Partner</Link>
-                </Button>
+          {/* Call to Action Section - Role Specific */}
+          {!isFarmer && (
+            <section className="bg-primary/10 rounded-3xl p-12 overflow-hidden relative">
+              <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
+                <div className="flex-1 space-y-6">
+                  <h2 className="text-4xl font-bold font-headline">Ready to start selling your yields?</h2>
+                  <p className="text-lg text-muted-foreground">
+                    Join thousands of local farmers who are reaching more customers and growing their business with FarmConnect.
+                  </p>
+                  <Button size="lg" asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold">
+                    <Link href="/farmer/register">Become a Farmer Partner</Link>
+                  </Button>
+                </div>
+                <div className="flex-1 relative aspect-square w-full max-w-md">
+                  <Image
+                    src="https://picsum.photos/seed/farmer3/600/600"
+                    alt="Happy Farmer"
+                    fill
+                    className="object-cover rounded-2xl shadow-2xl"
+                    data-ai-hint="smiling farmer"
+                  />
+                </div>
               </div>
-              <div className="flex-1 relative aspect-square w-full max-w-md">
-                <Image
-                  src="https://picsum.photos/seed/farmer3/600/600"
-                  alt="Happy Farmer"
-                  fill
-                  className="object-cover rounded-2xl shadow-2xl"
-                  data-ai-hint="smiling farmer"
-                />
+            </section>
+          )}
+
+          {isFarmer && (
+            <section className="bg-primary/5 rounded-3xl p-12 border-2 border-dashed border-primary/20">
+              <div className="flex flex-col md:flex-row items-center gap-12">
+                <div className="flex-1 space-y-6">
+                  <h2 className="text-4xl font-bold font-headline text-primary">Grow Your Farm Online</h2>
+                  <p className="text-lg text-muted-foreground italic">
+                    "FarmConnect helped me reach 3x more customers in just two months. The inventory management tools are so simple to use!"
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Sprout className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-bold">Harvest Manager Pro</p>
+                      <p className="text-sm text-muted-foreground">Tip: Keep your stock quantities updated for better search visibility.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 grid grid-cols-2 gap-4">
+                  <div className="p-6 bg-white rounded-2xl shadow-sm text-center">
+                    <p className="text-3xl font-bold text-primary">24h</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold mt-1">Direct Delivery</p>
+                  </div>
+                  <div className="p-6 bg-white rounded-2xl shadow-sm text-center">
+                    <p className="text-3xl font-bold text-primary">0%</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold mt-1">Middleman Fees</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
         </div>
       </main>
