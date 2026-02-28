@@ -3,7 +3,7 @@
 
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -804,7 +804,7 @@ export default function DashboardPage() {
                           </div>
                         ) : (
                           <div className="space-y-10">
-                            {Object.values(groupedProducts).map((group) => (
+                            {Object.values(groupedProducts).map((group: any) => (
                               <div key={group.farm.id} className="space-y-4">
                                 <div className="flex items-center gap-2 border-b border-primary/20 pb-2">
                                   <Store className="h-5 w-5 text-primary" />
@@ -827,7 +827,7 @@ export default function DashboardPage() {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {group.products.map((p) => {
+                                    {group.products.map((p: any) => {
                                       const prodImg = resolveImageUrl(p.image || p.imageUrl);
                                       return (
                                         <TableRow key={p.id}>
