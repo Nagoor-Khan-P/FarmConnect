@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Leaf, Search, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Bell, Trash2, Clock, Copy, Check } from "lucide-react";
+import { Leaf, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Bell, Trash2, Clock, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -89,16 +89,6 @@ export function Navbar() {
 
         {/* Actions Section */}
         <div className="flex items-center gap-2 sm:gap-4 ml-auto">
-          {/* Search Bar */}
-          <div className="relative hidden md:block shrink">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
-              type="search"
-              placeholder="Search yields..."
-              className="pl-8 h-9 w-40 lg:w-64 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </div>
-
           {/* Notifications Bell */}
           {mounted && (
             <Popover>
