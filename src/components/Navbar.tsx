@@ -1,9 +1,8 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Leaf, Search, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Store } from "lucide-react";
+import { Leaf, Search, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Bell, Trash2, Clock, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -12,20 +11,36 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { formatDistanceToNow } from "date-fns";
 
 export function Navbar() {
   const pathname = usePathname();
   const { cartCount } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
+  const { history, clearHistory } = useToast();
   const [mounted, setMounted] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const isFarmer = user?.roles.includes('ROLE_FARMER');
 
@@ -83,6 +98,61 @@ export function Navbar() {
               className="pl-8 h-9 w-40 lg:w-64 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
+
+          {/* Notifications Bell */}
+          {mounted && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative shrink-0">
+                  <Bell className="h-5 w-5" />
+                  {history.length > 0 && (
+                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h4 className="font-bold text-sm">Notifications</h4>
+                  {history.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={clearHistory} className="h-8 text-xs text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-3 w-3 mr-1" /> Clear
+                    </Button>
+                  )}
+                </div>
+                <ScrollArea className="h-[300px]">
+                  {history.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground">
+                      No recent notifications
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {history.map((item) => {
+                        const copyText = `${item.title ? item.title + ': ' : ''}${item.description || ''}`;
+                        return (
+                          <div key={item.id} className="p-4 border-b last:border-0 hover:bg-muted/50 transition-colors group relative">
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-bold text-sm pr-6">{item.title || "Notification"}</p>
+                              <button 
+                                onClick={() => handleCopy(item.id, copyText)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-background rounded-md"
+                              >
+                                {copiedId === item.id ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.description}</p>
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider">
+                              <Clock className="h-2 w-2" />
+                              {formatDistanceToNow(item.timestamp, { addSuffix: true })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
+          )}
           
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative shrink-0">
