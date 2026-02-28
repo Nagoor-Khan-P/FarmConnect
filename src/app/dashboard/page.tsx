@@ -476,7 +476,9 @@ export default function DashboardPage() {
         toast({ title: "Farm Deleted", description: "The farm storefront has been removed." });
         setIsFarmDeleteOpen(false);
         setFarmToDelete(null);
+        // Refresh both farms and products to ensure inventory is correctly updated
         fetchMyFarms();
+        fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to delete farm");
