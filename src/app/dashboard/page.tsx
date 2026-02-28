@@ -67,6 +67,18 @@ import { useToast } from "@/hooks/use-toast";
 import { AiYieldDescription } from "@/components/AiYieldDescription";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+const YIELD_UNITS = [
+  "kg", 
+  "g", 
+  "bunch", 
+  "dozen", 
+  "piece", 
+  "jar", 
+  "L", 
+  "box", 
+  "bag"
+];
+
 export default function DashboardPage() {
   const { user, token, logout, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -746,13 +758,15 @@ export default function DashboardPage() {
                                       </div>
                                       <div className="space-y-2">
                                         <Label htmlFor="prod-unit">Unit</Label>
-                                        <Input 
-                                          id="prod-unit" 
-                                          placeholder="kg, bunch" 
+                                        <select 
+                                          id="prod-unit"
+                                          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                                           required
                                           value={newProduct.unit}
                                           onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
-                                        />
+                                        >
+                                          {YIELD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                        </select>
                                       </div>
                                       <div className="space-y-2">
                                         <Label htmlFor="prod-stock">Stock</Label>
@@ -1128,7 +1142,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-prod-cat">Category</Label>
-                      <select className="w-full h-10 rounded-md border bg-background px-3 focus:ring-2 focus:ring-primary" value={editingProduct.category} onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}>
+                      <select 
+                        className="w-full h-10 rounded-md border bg-background px-3 focus:ring-2 focus:ring-primary" 
+                        value={editingProduct.category} 
+                        onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
+                      >
                         <option>Vegetables</option>
                         <option>Fruits</option>
                         <option>Dairy & Eggs</option>
@@ -1144,7 +1162,14 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-2">
                       <Label>Unit</Label>
-                      <Input required value={editingProduct.unit} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} />
+                      <select 
+                        className="w-full h-10 rounded-md border bg-background px-3 focus:ring-2 focus:ring-primary"
+                        required
+                        value={editingProduct.unit}
+                        onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})}
+                      >
+                        {YIELD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
                     </div>
                   </div>
                   <div className="space-y-2">
