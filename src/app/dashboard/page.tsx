@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -521,7 +520,8 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-  const fileInputClass = "cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all";
+  // Refined file input styling with solid borders and high contrast
+  const fileInputClass = "cursor-pointer h-auto p-1 file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 transition-all border-2 border-primary/20 hover:border-primary/50 bg-white shadow-sm";
 
   return (
     <div className="flex flex-col min-h-screen">

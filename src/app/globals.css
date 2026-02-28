@@ -20,8 +20,8 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 32% 80%; /* Darkened for visibility */
-    --input: 214.3 32% 80%;  /* Darkened for visibility */
+    --border: 214.3 32% 75%; /* Darkened further for better visibility */
+    --input: 214.3 32% 75%;  /* Darkened further for better visibility */
     --ring: 142 70% 45%;
     --chart-1: 142 70% 45%;
     --chart-2: 142 45% 44%;
