@@ -46,12 +46,19 @@ export function YieldCard({
     });
   };
 
+  // Determine the correct image source (handling relative backend paths)
+  const imageSrc = image && (image.startsWith('http') || image.startsWith('data:')) 
+    ? image 
+    : image 
+      ? `http://localhost:8080/uploads/${image}`
+      : `https://picsum.photos/seed/${id}/400/300`;
+
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-card/50 flex flex-col h-full">
       <Link href={`/yields/${id}`}>
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
-            src={image}
+            src={imageSrc}
             alt={name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"

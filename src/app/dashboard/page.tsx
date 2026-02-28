@@ -27,7 +27,9 @@ import {
   RefreshCcw,
   Pencil,
   Box,
-  Home
+  Home,
+  Image as ImageIcon,
+  Upload
 } from "lucide-react";
 import { 
   Dialog, 
@@ -60,6 +62,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { AiYieldDescription } from "@/components/AiYieldDescription";
 
@@ -75,6 +78,7 @@ export default function DashboardPage() {
   const [editingFarm, setEditingFarm] = useState<any>(null);
   const [farmToDelete, setFarmToDelete] = useState<any>(null);
   const [isFarmDeleteOpen, setIsFarmDeleteOpen] = useState(false);
+  const [farmImageFile, setFarmImageFile] = useState<File | null>(null);
   
   const [farmFormData, setFarmFormData] = useState({
     name: "",
@@ -90,6 +94,7 @@ export default function DashboardPage() {
   // Product Management State
   const [products, setProducts] = useState<any[]>([]);
   const [isProductsLoading, setIsProductsLoading] = useState(false);
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
   
   // Sales Management State
   const [sales, setSales] = useState<any[]>([]);
@@ -108,8 +113,7 @@ export default function DashboardPage() {
     category: "Vegetables",
     unit: "kg",
     quantity: 10,
-    farmId: "",
-    image: "https://picsum.photos/seed/product/400/300"
+    farmId: ""
   });
 
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -133,7 +137,6 @@ export default function DashboardPage() {
         const data = await response.json();
         const farmsList = Array.isArray(data) ? data : [data];
         setFarms(farmsList);
-        // Pre-select first farm for new products if available
         if (farmsList.length > 0 && !newProduct.farmId) {
           setNewProduct(prev => ({ ...prev, farmId: farmsList[0].id }));
         }
@@ -223,18 +226,26 @@ export default function DashboardPage() {
     const method = editingFarm ? 'PUT' : 'POST';
 
     try {
+      const formData = new FormData();
+      formData.append('name', farmFormData.name);
+      formData.append('description', farmFormData.description);
+      formData.append('address', JSON.stringify(farmFormData.address));
+      if (farmImageFile) {
+        formData.append('image', farmImageFile);
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': token || '',
         },
-        body: JSON.stringify(farmFormData),
+        body: formData,
       });
 
       if (response.ok) {
         setIsFarmDialogOpen(false);
         setEditingFarm(null);
+        setFarmImageFile(null);
         setFarmFormData({
           name: "",
           description: "",
@@ -260,35 +271,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleConfirmDeleteFarm = async () => {
-    if (!farmToDelete || !user) return;
-
-    try {
-      const response = await fetch(`http://localhost:8080/api/farms/${farmToDelete.id}/farmer/${user.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': token || '',
-        },
-      });
-
-      if (response.ok) {
-        toast({ title: "Farm Deleted", description: "The farm storefront has been removed." });
-        setIsFarmDeleteOpen(false);
-        setFarmToDelete(null);
-        fetchMyFarms();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to delete farm");
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Delete Failed",
-        description: error.message,
-      });
-    }
-  };
-
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProduct.farmId) {
@@ -297,18 +279,30 @@ export default function DashboardPage() {
     }
 
     try {
+      const formData = new FormData();
+      formData.append('name', newProduct.name);
+      formData.append('description', newProduct.description);
+      formData.append('price', newProduct.price.toString());
+      formData.append('category', newProduct.category);
+      formData.append('unit', newProduct.unit);
+      formData.append('quantity', newProduct.quantity.toString());
+      formData.append('farmId', newProduct.farmId);
+      if (productImageFile) {
+        formData.append('image', productImageFile);
+      }
+
       const response = await fetch('http://localhost:8080/api/products', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': token || '',
         },
-        body: JSON.stringify(newProduct),
+        body: formData,
       });
 
       if (response.ok) {
         toast({ title: "Yield Added", description: `${newProduct.name} is now live!` });
         setIsDialogOpen(false);
+        setProductImageFile(null);
         setNewProduct({
           name: "",
           description: "",
@@ -317,7 +311,6 @@ export default function DashboardPage() {
           unit: "kg",
           quantity: 10,
           farmId: farms[0]?.id || "",
-          image: "https://picsum.photos/seed/product/400/300"
         });
         fetchMyProducts();
       } else {
@@ -334,18 +327,29 @@ export default function DashboardPage() {
     if (!editingProduct) return;
 
     try {
+      const formData = new FormData();
+      formData.append('name', editingProduct.name);
+      formData.append('description', editingProduct.description);
+      formData.append('price', editingProduct.price.toString());
+      formData.append('category', editingProduct.category);
+      formData.append('unit', editingProduct.unit);
+      formData.append('quantity', editingProduct.quantity.toString());
+      if (productImageFile) {
+        formData.append('image', productImageFile);
+      }
+
       const response = await fetch(`http://localhost:8080/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': token || '',
         },
-        body: JSON.stringify(editingProduct),
+        body: formData,
       });
 
       if (response.ok) {
         toast({ title: "Yield Updated", description: `${editingProduct.name} details have been updated.` });
         setIsEditDialogOpen(false);
+        setProductImageFile(null);
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -413,8 +417,38 @@ export default function DashboardPage() {
     }
   };
 
+  const handleConfirmDeleteFarm = async () => {
+    if (!farmToDelete || !user) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/farms/${farmToDelete.id}/farmer/${user.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': token || '',
+        },
+      });
+
+      if (response.ok) {
+        toast({ title: "Farm Deleted", description: "The farm storefront has been removed." });
+        setIsFarmDeleteOpen(false);
+        setFarmToDelete(null);
+        fetchMyFarms();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete farm");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Delete Failed",
+        description: error.message,
+      });
+    }
+  };
+
   const openAddFarmDialog = () => {
     setEditingFarm(null);
+    setFarmImageFile(null);
     setFarmFormData({
       name: "",
       description: "",
@@ -425,6 +459,7 @@ export default function DashboardPage() {
 
   const openEditFarmDialog = (farm: any) => {
     setEditingFarm(farm);
+    setFarmImageFile(null);
     setFarmFormData({
       name: farm.name,
       description: farm.description,
@@ -534,12 +569,28 @@ export default function DashboardPage() {
                         {farms.map((farm) => (
                           <Card key={farm.id} className="border-t-4 border-t-primary shadow-md overflow-hidden">
                             <CardHeader className="flex flex-row items-start justify-between bg-primary/5">
-                              <div>
-                                <CardTitle className="text-2xl">{farm.name}</CardTitle>
-                                <CardDescription className="flex items-center gap-1 mt-1">
-                                  <MapPin className="h-3 w-3" /> 
-                                  {farm.address?.street}, {farm.address?.city}, {farm.address?.state} {farm.address?.zipCode}
-                                </CardDescription>
+                              <div className="flex gap-4">
+                                <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
+                                  {farm.image ? (
+                                    <Image 
+                                      src={farm.image.startsWith('http') ? farm.image : `http://localhost:8080/uploads/${farm.image}`} 
+                                      alt={farm.name} 
+                                      fill 
+                                      className="object-cover" 
+                                    />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center">
+                                      <Store className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <CardTitle className="text-2xl">{farm.name}</CardTitle>
+                                  <CardDescription className="flex items-center gap-1 mt-1">
+                                    <MapPin className="h-3 w-3" /> 
+                                    {farm.address?.street}, {farm.address?.city}, {farm.address?.state} {farm.address?.zipCode}
+                                  </CardDescription>
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <Button variant="outline" size="sm" onClick={() => openEditFarmDialog(farm)} className="hover:text-primary hover:bg-primary/5">
@@ -672,6 +723,19 @@ export default function DashboardPage() {
                                     </div>
                                   </div>
                                   <div className="space-y-2">
+                                    <Label htmlFor="prod-image">Yield Image</Label>
+                                    <div className="flex items-center gap-4">
+                                      <Input 
+                                        id="prod-image" 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
+                                        className="cursor-pointer"
+                                      />
+                                      {productImageFile && <ImageIcon className="h-6 w-6 text-primary" />}
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
                                     <AiYieldDescription 
                                       yieldType={newProduct.name}
                                       characteristics={["fresh", "local", "organic"]}
@@ -721,6 +785,7 @@ export default function DashboardPage() {
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
+                                      <TableHead className="w-16"></TableHead>
                                       <TableHead>Yield</TableHead>
                                       <TableHead>Category</TableHead>
                                       <TableHead>Price</TableHead>
@@ -731,6 +796,22 @@ export default function DashboardPage() {
                                   <TableBody>
                                     {group.products.map((p) => (
                                       <TableRow key={p.id}>
+                                        <TableCell>
+                                          <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted border">
+                                            {p.image ? (
+                                              <Image 
+                                                src={p.image.startsWith('http') ? p.image : `http://localhost:8080/uploads/${p.image}`} 
+                                                alt={p.name} 
+                                                fill 
+                                                className="object-cover" 
+                                              />
+                                            ) : (
+                                              <div className="h-full w-full flex items-center justify-center">
+                                                <Package className="h-4 w-4 text-muted-foreground" />
+                                              </div>
+                                            )}
+                                          </div>
+                                        </TableCell>
                                         <TableCell className="font-medium">{p.name}</TableCell>
                                         <TableCell>{p.category}</TableCell>
                                         <TableCell>₹{p.price} / {p.unit}</TableCell>
@@ -870,6 +951,23 @@ export default function DashboardPage() {
                     onChange={(e) => setFarmFormData({...farmFormData, name: e.target.value})}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="farm-image">Farm Storefront Image</Label>
+                  <div className="flex items-center gap-4">
+                    <Input 
+                      id="farm-image" 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => setFarmImageFile(e.target.files?.[0] || null)}
+                      className="cursor-pointer"
+                    />
+                    {farmImageFile && <Upload className="h-6 w-6 text-primary" />}
+                  </div>
+                  {editingFarm?.image && !farmImageFile && (
+                    <p className="text-xs text-muted-foreground">Currently using stored image. Upload to change.</p>
+                  )}
+                </div>
                 
                 <div className="space-y-4 pt-2">
                   <h4 className="text-sm font-bold flex items-center gap-2">
@@ -988,6 +1086,19 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       <Label>Unit</Label>
                       <Input required value={editingProduct.unit} onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-prod-image">Change Image</Label>
+                    <div className="flex items-center gap-4">
+                      <Input 
+                        id="edit-prod-image" 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
+                        className="cursor-pointer"
+                      />
+                      {productImageFile && <ImageIcon className="h-6 w-6 text-primary" />}
                     </div>
                   </div>
                 </div>
