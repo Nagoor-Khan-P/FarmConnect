@@ -521,6 +521,8 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
+  const fileInputClass = "cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all";
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -787,7 +789,7 @@ export default function DashboardPage() {
                                           type="file" 
                                           accept="image/*"
                                           onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
-                                          className="cursor-pointer"
+                                          className={fileInputClass}
                                         />
                                         {productImageFile && <ImageIcon className="h-6 w-6 text-primary" />}
                                       </div>
@@ -1029,7 +1031,7 @@ export default function DashboardPage() {
                         type="file" 
                         accept="image/*"
                         onChange={(e) => setFarmImageFile(e.target.files?.[0] || null)}
-                        className="cursor-pointer"
+                        className={fileInputClass}
                       />
                       {farmImageFile && <Upload className="h-6 w-6 text-primary" />}
                     </div>
@@ -1180,7 +1182,7 @@ export default function DashboardPage() {
                         type="file" 
                         accept="image/*"
                         onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
-                        className="cursor-pointer"
+                        className={fileInputClass}
                       />
                       {productImageFile && <ImageIcon className="h-6 w-6 text-primary" />}
                     </div>
