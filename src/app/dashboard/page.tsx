@@ -476,7 +476,6 @@ export default function DashboardPage() {
         toast({ title: "Farm Deleted", description: "The farm storefront has been removed." });
         setIsFarmDeleteOpen(false);
         setFarmToDelete(null);
-        // Refresh both farms and products to ensure inventory is correctly updated
         fetchMyFarms();
         fetchMyProducts();
       } else {
@@ -521,7 +520,6 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-  // Refined file input styling with solid borders and hand cursor
   const fileInputClass = "cursor-pointer h-auto p-1 file:cursor-pointer file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 transition-all border-2 border-primary/20 hover:border-primary/50 bg-white shadow-sm";
 
   return (
@@ -597,9 +595,11 @@ export default function DashboardPage() {
                   <TabsContent value="farm">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold font-headline">Manage Your Farm Storefronts</h3>
-                      <Button onClick={openAddFarmDialog} className="gap-2">
-                        <Plus className="h-4 w-4" /> Add Another Farm
-                      </Button>
+                      {farms.length > 0 && (
+                        <Button onClick={openAddFarmDialog} className="gap-2">
+                          <Plus className="h-4 w-4" /> Add Another Farm
+                        </Button>
+                      )}
                     </div>
 
                     {isLoadingFarms ? (
@@ -611,7 +611,7 @@ export default function DashboardPage() {
                         <Store className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                         <h4 className="text-lg font-bold">No Farms Registered</h4>
                         <p className="text-muted-foreground mb-6">Register your first farm to start selling.</p>
-                        <Button onClick={openAddFarmDialog}>Register Now</Button>
+                        <Button onClick={openAddFarmDialog}>Add Farm</Button>
                       </Card>
                     ) : (
                       <div className="grid grid-cols-1 gap-6">
