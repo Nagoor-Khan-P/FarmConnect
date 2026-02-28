@@ -227,9 +227,17 @@ export default function DashboardPage() {
 
     try {
       const formData = new FormData();
-      formData.append('name', farmFormData.name);
-      formData.append('description', farmFormData.description);
-      formData.append('address', JSON.stringify(farmFormData.address));
+      
+      const farmData = {
+        name: farmFormData.name,
+        description: farmFormData.description,
+        address: farmFormData.address
+      };
+
+      // Wrap JSON in a Blob with application/json type
+      const farmBlob = new Blob([JSON.stringify(farmData)], { type: 'application/json' });
+      formData.append('farm', farmBlob);
+      
       if (farmImageFile) {
         formData.append('image', farmImageFile);
       }
@@ -280,13 +288,20 @@ export default function DashboardPage() {
 
     try {
       const formData = new FormData();
-      formData.append('name', newProduct.name);
-      formData.append('description', newProduct.description);
-      formData.append('price', newProduct.price.toString());
-      formData.append('category', newProduct.category);
-      formData.append('unit', newProduct.unit);
-      formData.append('quantity', newProduct.quantity.toString());
-      formData.append('farmId', newProduct.farmId);
+      
+      const productData = {
+        name: newProduct.name,
+        description: newProduct.description,
+        price: newProduct.price,
+        category: newProduct.category,
+        unit: newProduct.unit,
+        quantity: newProduct.quantity,
+        farmId: newProduct.farmId
+      };
+
+      const productBlob = new Blob([JSON.stringify(productData)], { type: 'application/json' });
+      formData.append('product', productBlob);
+
       if (productImageFile) {
         formData.append('image', productImageFile);
       }
@@ -328,12 +343,19 @@ export default function DashboardPage() {
 
     try {
       const formData = new FormData();
-      formData.append('name', editingProduct.name);
-      formData.append('description', editingProduct.description);
-      formData.append('price', editingProduct.price.toString());
-      formData.append('category', editingProduct.category);
-      formData.append('unit', editingProduct.unit);
-      formData.append('quantity', editingProduct.quantity.toString());
+      
+      const productData = {
+        name: editingProduct.name,
+        description: editingProduct.description,
+        price: editingProduct.price,
+        category: editingProduct.category,
+        unit: editingProduct.unit,
+        quantity: editingProduct.quantity
+      };
+
+      const productBlob = new Blob([JSON.stringify(productData)], { type: 'application/json' });
+      formData.append('product', productBlob);
+
       if (productImageFile) {
         formData.append('image', productImageFile);
       }
