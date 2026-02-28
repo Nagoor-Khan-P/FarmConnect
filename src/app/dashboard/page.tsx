@@ -224,7 +224,6 @@ export default function DashboardPage() {
   const groupedProducts = useMemo(() => {
     const groups: Record<string, { farm: any; products: any[] }> = {};
     products.forEach((p) => {
-      // Correctly handle the flattened data structure from backend
       const farmId = p.farmId || p.farm?.id || "unassigned";
       const farmName = p.farmName || p.farm?.name || "Unassigned Yields";
       
@@ -520,8 +519,8 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-  // Refined file input styling with solid borders and high contrast
-  const fileInputClass = "cursor-pointer h-auto p-1 file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 transition-all border-2 border-primary/20 hover:border-primary/50 bg-white shadow-sm";
+  // Refined file input styling with solid borders and hand cursor
+  const fileInputClass = "cursor-pointer h-auto p-1 file:cursor-pointer file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 transition-all border-2 border-primary/20 hover:border-primary/50 bg-white shadow-sm";
 
   return (
     <div className="flex flex-col min-h-screen">
