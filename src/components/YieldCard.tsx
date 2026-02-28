@@ -46,12 +46,15 @@ export function YieldCard({
     });
   };
 
-  // Determine the correct image source (handling relative backend paths)
-  const imageSrc = image && (image.startsWith('http') || image.startsWith('data:')) 
-    ? image 
-    : image 
-      ? `http://localhost:8080/uploads/${image}`
-      : `https://picsum.photos/seed/${id}/400/300`;
+  // Resolve image URL handling both absolute and relative paths
+  const imageSrc = (function() {
+    if (!image) return `https://picsum.photos/seed/${id}/400/300`;
+    if (image.startsWith('http') || image.startsWith('data:')) return image;
+    
+    // If it's a relative path from the backend
+    const cleanPath = image.startsWith('/') ? image : `/${image}`;
+    return `http://localhost:8080${cleanPath}`;
+  })();
 
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-card/50 flex flex-col h-full">
@@ -63,6 +66,7 @@ export function YieldCard({
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
             data-ai-hint={imageHint}
+            unoptimized
           />
           <Badge className="absolute top-2 left-2 bg-secondary text-secondary-foreground">
             {category}

@@ -122,6 +122,14 @@ export default function DashboardPage() {
 
   const isFarmer = user?.roles.includes('ROLE_FARMER');
 
+  // Helper to resolve backend image paths
+  const resolveImageUrl = (path: string) => {
+    if (!path) return null;
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `http://localhost:8080${cleanPath}`;
+  };
+
   const fetchMyFarms = useCallback(async () => {
     if (!token) return;
     setIsLoadingFarms(true);
@@ -401,9 +409,6 @@ export default function DashboardPage() {
         fetchMyProducts();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        if (response.status === 403) {
-          throw new Error("Action denied (403). Please ensure your backend permits OPTIONS preflight requests for the PATCH method.");
-        }
         throw new Error(errorData.message || "Failed to update stock");
       }
     } catch (error: any) {
@@ -587,57 +592,60 @@ export default function DashboardPage() {
                       </Card>
                     ) : (
                       <div className="grid grid-cols-1 gap-6">
-                        {farms.map((farm) => (
-                          <Card key={farm.id} className="border-t-4 border-t-primary shadow-md overflow-hidden">
-                            <CardHeader className="flex flex-row items-start justify-between bg-primary/5">
-                              <div className="flex gap-4">
-                                <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
-                                  {farm.image ? (
-                                    <Image 
-                                      src={farm.image.startsWith('http') ? farm.image : `http://localhost:8080/uploads/${farm.image}`} 
-                                      alt={farm.name} 
-                                      fill 
-                                      className="object-cover" 
-                                      unoptimized
-                                    />
-                                  ) : (
-                                    <div className="h-full w-full flex items-center justify-center">
-                                      <Store className="h-6 w-6 text-muted-foreground" />
-                                    </div>
-                                  )}
+                        {farms.map((farm) => {
+                          const farmImg = resolveImageUrl(farm.image || farm.imageUrl);
+                          return (
+                            <Card key={farm.id} className="border-t-4 border-t-primary shadow-md overflow-hidden">
+                              <CardHeader className="flex flex-row items-start justify-between bg-primary/5">
+                                <div className="flex gap-4">
+                                  <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
+                                    {farmImg ? (
+                                      <Image 
+                                        src={farmImg} 
+                                        alt={farm.name} 
+                                        fill 
+                                        className="object-cover" 
+                                        unoptimized
+                                      />
+                                    ) : (
+                                      <div className="h-full w-full flex items-center justify-center">
+                                        <Store className="h-6 w-6 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <CardTitle className="text-2xl">{farm.name}</CardTitle>
+                                    <CardDescription className="flex items-center gap-1 mt-1">
+                                      <MapPin className="h-3 w-3" /> 
+                                      {farm.address?.street}, {farm.address?.city}, {farm.address?.state} {farm.address?.zipCode}
+                                    </CardDescription>
+                                  </div>
                                 </div>
-                                <div>
-                                  <CardTitle className="text-2xl">{farm.name}</CardTitle>
-                                  <CardDescription className="flex items-center gap-1 mt-1">
-                                    <MapPin className="h-3 w-3" /> 
-                                    {farm.address?.street}, {farm.address?.city}, {farm.address?.state} {farm.address?.zipCode}
-                                  </CardDescription>
+                                <div className="flex gap-2">
+                                  <Button variant="outline" size="sm" onClick={() => openEditFarmDialog(farm)} className="hover:text-primary hover:bg-primary/5">
+                                    <Pencil className="h-4 w-4 mr-1" /> Edit
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    onClick={() => openDeleteFarmDialog(farm)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                                  </Button>
                                 </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => openEditFarmDialog(farm)} className="hover:text-primary hover:bg-primary/5">
-                                  <Pencil className="h-4 w-4 mr-1" /> Edit
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                  onClick={() => openDeleteFarmDialog(farm)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1" /> Delete
-                                </Button>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="pt-6">
-                              <div className="bg-muted p-4 rounded-lg">
-                                <h4 className="text-sm font-bold uppercase tracking-wider text-primary mb-2">Our Story</h4>
-                                <p className="text-sm text-muted-foreground leading-relaxed">
-                                  {farm.description || "No description provided yet."}
-                                </p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                              </CardHeader>
+                              <CardContent className="pt-6">
+                                <div className="bg-muted p-4 rounded-lg">
+                                  <h4 className="text-sm font-bold uppercase tracking-wider text-primary mb-2">Our Story</h4>
+                                  <p className="text-sm text-muted-foreground leading-relaxed">
+                                    {farm.description || "No description provided yet."}
+                                  </p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
                     )}
                   </TabsContent>
@@ -816,48 +824,51 @@ export default function DashboardPage() {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {group.products.map((p) => (
-                                      <TableRow key={p.id}>
-                                        <TableCell>
-                                          <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted border">
-                                            {p.image ? (
-                                              <Image 
-                                                src={p.image.startsWith('http') ? p.image : `http://localhost:8080/uploads/${p.image}`} 
-                                                alt={p.name} 
-                                                fill 
-                                                className="object-cover" 
-                                                unoptimized
-                                              />
-                                            ) : (
-                                              <div className="h-full w-full flex items-center justify-center">
-                                                <Package className="h-4 w-4 text-muted-foreground" />
-                                              </div>
-                                            )}
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium">{p.name}</TableCell>
-                                        <TableCell>{p.category}</TableCell>
-                                        <TableCell>₹{p.price} / {p.unit}</TableCell>
-                                        <TableCell>
-                                          <Badge variant={p.quantity < 10 ? "destructive" : "secondary"}>
-                                            {p.quantity} {p.unit}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10" onClick={() => { setStockUpdate({ id: p.id, quantity: p.quantity }); setIsStockDialogOpen(true); }}>
-                                              <Box className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/5" onClick={() => { setEditingProduct(p); setIsEditDialogOpen(true); }}>
-                                              <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
+                                    {group.products.map((p) => {
+                                      const prodImg = resolveImageUrl(p.image || p.imageUrl);
+                                      return (
+                                        <TableRow key={p.id}>
+                                          <TableCell>
+                                            <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted border">
+                                              {prodImg ? (
+                                                <Image 
+                                                  src={prodImg} 
+                                                  alt={p.name} 
+                                                  fill 
+                                                  className="object-cover" 
+                                                  unoptimized
+                                                />
+                                              ) : (
+                                                <div className="h-full w-full flex items-center justify-center">
+                                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                                </div>
+                                              )}
+                                            </div>
+                                          </TableCell>
+                                          <TableCell className="font-medium">{p.name}</TableCell>
+                                          <TableCell>{p.category}</TableCell>
+                                          <TableCell>₹{p.price} / {p.unit}</TableCell>
+                                          <TableCell>
+                                            <Badge variant={p.quantity < 10 ? "destructive" : "secondary"}>
+                                              {p.quantity} {p.unit}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                              <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10" onClick={() => { setStockUpdate({ id: p.id, quantity: p.quantity }); setIsStockDialogOpen(true); }}>
+                                                <Box className="h-4 w-4" />
+                                              </Button>
+                                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/5" onClick={() => { setEditingProduct(p); setIsEditDialogOpen(true); }}>
+                                                <Pencil className="h-4 w-4" />
+                                              </Button>
+                                              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
+                                                <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
                                   </TableBody>
                                 </Table>
                               </div>

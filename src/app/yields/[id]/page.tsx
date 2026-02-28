@@ -17,7 +17,7 @@ export default function YieldDetailPage() {
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  // Mock data for detail view
+  // Mock data for detail view - In a real app, this would fetch from an API
   const yieldItem = {
     id: id as string,
     name: "Crisp Orchard Apples",
@@ -48,6 +48,13 @@ export default function YieldDetailPage() {
     });
   };
 
+  const resolveImageUrl = (path: string) => {
+    if (!path) return `https://picsum.photos/seed/${id}/800/600`;
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `http://localhost:8080${cleanPath}`;
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -61,11 +68,12 @@ export default function YieldDetailPage() {
           <div className="space-y-4">
             <div className="relative aspect-square rounded-2xl overflow-hidden shadow-lg">
               <Image 
-                src={yieldItem.images[0]} 
+                src={resolveImageUrl(yieldItem.images[0])} 
                 alt={yieldItem.name} 
                 fill 
                 className="object-cover"
                 data-ai-hint="fresh apples"
+                unoptimized
               />
             </div>
           </div>
