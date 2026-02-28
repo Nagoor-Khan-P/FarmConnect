@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -48,7 +49,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/AlertDialog";
 import {
   Table,
   TableBody,
@@ -212,10 +213,17 @@ export default function DashboardPage() {
   const groupedProducts = useMemo(() => {
     const groups: Record<string, { farm: any; products: any[] }> = {};
     products.forEach((p) => {
-      const farmId = p.farm?.id || "unassigned";
+      // Support both nested farm object and flattened farmId/farmName from API
+      const farmId = p.farm?.id || p.farmId || "unassigned";
+      const farmName = p.farm?.name || p.farmName || "Unassigned Yields";
+      
       if (!groups[farmId]) {
         groups[farmId] = {
-          farm: p.farm || { name: "Unassigned Yields", address: {} },
+          farm: p.farm || { 
+            id: farmId, 
+            name: farmName, 
+            address: p.farm?.address || {} 
+          },
           products: [],
         };
       }
