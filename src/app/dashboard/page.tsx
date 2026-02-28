@@ -157,9 +157,6 @@ export default function DashboardPage() {
         const data = await response.json();
         const farmsList = Array.isArray(data) ? data : [data];
         setFarms(farmsList);
-        if (farmsList.length > 0 && !newProduct.farmId) {
-          setNewProduct(prev => ({ ...prev, farmId: farmsList[0].id }));
-        }
       } else if (response.status === 404) {
         setFarms([]);
       }
@@ -168,7 +165,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoadingFarms(false);
     }
-  }, [token, newProduct.farmId]);
+  }, [token]);
 
   const fetchMyProducts = useCallback(async () => {
     if (!token) return;
@@ -350,7 +347,7 @@ export default function DashboardPage() {
           category: "Vegetables",
           unit: "kg",
           quantity: 10,
-          farmId: farms[0]?.id || "",
+          farmId: "",
         });
         fetchMyProducts();
       } else {
