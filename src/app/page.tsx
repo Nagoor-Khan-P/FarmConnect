@@ -3,67 +3,37 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { YieldCard } from "@/components/YieldCard";
 import { AiRecommendations } from "@/components/AiRecommendations";
 import { Button } from "@/components/ui/button";
-import { Sprout, Users, Truck, ShieldCheck, ArrowRight, Leaf, LayoutDashboard, ShoppingBag, PlusCircle } from "lucide-react";
+import { Sprout, Users, Truck, ShieldCheck, ArrowRight, Leaf, LayoutDashboard, ShoppingBag, PlusCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
+  const [featuredYields, setFeaturedYields] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const isFarmer = user?.roles.includes('ROLE_FARMER');
 
-  const featuredYields = [
-    {
-      id: "y1",
-      name: "Crisp Orchard Apples",
-      category: "Fruits",
-      price: 180.00,
-      unit: "kg",
-      farmer: "Sarah Jenkins",
-      location: "Oak Ridge Farms",
-      rating: 4.8,
-      image: "https://picsum.photos/seed/apples/400/300",
-      imageHint: "fresh red apples"
-    },
-    {
-      id: "y2",
-      name: "Wildflower Honey",
-      category: "Pantry",
-      price: 650.00,
-      unit: "jar",
-      farmer: "Ben's Bees",
-      location: "Valley Meadows",
-      rating: 4.9,
-      image: "https://picsum.photos/seed/honey/400/300",
-      imageHint: "honey jar"
-    },
-    {
-      id: "y3",
-      name: "Organic Heirloom Carrots",
-      category: "Vegetables",
-      price: 120.00,
-      unit: "bunch",
-      farmer: "Organic Roots",
-      location: "Green Glade",
-      rating: 4.7,
-      image: "https://picsum.photos/seed/carrots/400/300",
-      imageHint: "fresh carrots"
-    },
-    {
-      id: "y4",
-      name: "Farm Fresh Large Eggs",
-      category: "Dairy & Eggs",
-      price: 95.00,
-      unit: "dozen",
-      farmer: "Sunny Side Poultry",
-      location: "East Hills",
-      rating: 4.9,
-      image: "https://picsum.photos/seed/eggs/400/300",
-      imageHint: "fresh eggs"
+  useEffect(() => {
+    async function fetchFeatured() {
+      try {
+        const response = await fetch('http://localhost:8080/api/products');
+        if (response.ok) {
+          const data = await response.json();
+          // Take only the first 4 for the seasonal harvest
+          setFeaturedYields(data.slice(0, 4));
+        }
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  ];
+    fetchFeatured();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -174,11 +144,30 @@ export default function Home() {
                 View all yields <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredYields.map((item) => (
-                <YieldCard key={item.id} {...item} />
-              ))}
-            </div>
+            
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredYields.map((item) => (
+                  <YieldCard 
+                    key={item.id} 
+                    id={item.id}
+                    name={item.name}
+                    category={item.category}
+                    price={item.price}
+                    unit={item.unit}
+                    farmer={item.farmName || "Local Farmer"}
+                    location={item.farmLocation || "Local Farm"}
+                    rating={item.rating || 5.0}
+                    image={item.imageUrl || ""}
+                    imageHint={item.name}
+                  />
+                ))}
+              </div>
+            )}
           </section>
 
           {/* AI Recommendations Section - Personalized for logged in users */}

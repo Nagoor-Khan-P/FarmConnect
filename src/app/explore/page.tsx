@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/Navbar";
 import { YieldCard } from "@/components/YieldCard";
 import { Button } from "@/components/ui/button";
@@ -15,91 +15,61 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Filter, Search as SearchIcon, X } from "lucide-react";
+import { Filter, Search as SearchIcon, X, Loader2 } from "lucide-react";
 
 export default function ExplorePage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [priceRange, setPriceRange] = useState([0, 1500]);
+  const [priceRange, setPriceRange] = useState([0, 2000]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("newest");
 
-  const allYields = [
-    {
-      id: "y1",
-      name: "Crisp Orchard Apples",
-      category: "Fruits",
-      price: 180.00,
-      unit: "kg",
-      farmer: "Sarah Jenkins",
-      location: "Oak Ridge Farms",
-      rating: 4.8,
-      image: "https://picsum.photos/seed/apples/400/300",
-      imageHint: "fresh red apples"
-    },
-    {
-      id: "y2",
-      name: "Wildflower Honey",
-      category: "Pantry",
-      price: 650.00,
-      unit: "jar",
-      farmer: "Ben's Bees",
-      location: "Valley Meadows",
-      rating: 4.9,
-      image: "https://picsum.photos/seed/honey/400/300",
-      imageHint: "honey jar"
-    },
-    {
-      id: "y3",
-      name: "Organic Heirloom Carrots",
-      category: "Vegetables",
-      price: 120.00,
-      unit: "bunch",
-      farmer: "Organic Roots",
-      location: "Green Glade",
-      rating: 4.7,
-      image: "https://picsum.photos/seed/carrots/400/300",
-      imageHint: "fresh carrots"
-    },
-    {
-      id: "y4",
-      name: "Farm Fresh Large Eggs",
-      category: "Dairy & Eggs",
-      price: 95.00,
-      unit: "dozen",
-      farmer: "Sunny Side Poultry",
-      location: "East Hills",
-      rating: 4.9,
-      image: "https://picsum.photos/seed/eggs/400/300",
-      imageHint: "fresh eggs"
-    },
-    {
-      id: "y5",
-      name: "Artisanal Sourdough",
-      category: "Bakery",
-      price: 240.00,
-      unit: "loaf",
-      farmer: "Golden Grains",
-      location: "Valley Meadows",
-      rating: 4.6,
-      image: "https://picsum.photos/seed/bread/400/300",
-      imageHint: "sourdough bread"
-    },
-    {
-      id: "y6",
-      name: "Grass-Fed Butter",
-      category: "Dairy & Eggs",
-      price: 450.00,
-      unit: "block",
-      farmer: "Happy Cows Dairy",
-      location: "North Fields",
-      rating: 4.8,
-      image: "https://picsum.photos/seed/butter/400/300",
-      imageHint: "farm butter"
+  const fetchProducts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  }, []);
 
-  const filteredYields = allYields.filter(y => 
-    y.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-    y.price >= priceRange[0] && y.price <= priceRange[1]
-  );
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category) 
+        : [...prev, category]
+    );
+  };
+
+  const filteredYields = products.filter(y => {
+    const matchesSearch = y.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPrice = y.price >= priceRange[0] && y.price <= priceRange[1];
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(y.category);
+    return matchesSearch && matchesPrice && matchesCategory;
+  }).sort((a, b) => {
+    if (sortBy === "price-low") return a.price - b.price;
+    if (sortBy === "price-high") return b.price - a.price;
+    if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+    return 0; // default newest/unsorted
+  });
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setPriceRange([0, 2000]);
+    setSelectedCategories([]);
+    setSortBy("newest");
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -120,8 +90,12 @@ export default function ExplorePage() {
                   <div className="space-y-2">
                     {["Fruits", "Vegetables", "Dairy & Eggs", "Bakery", "Pantry"].map(cat => (
                       <div key={cat} className="flex items-center space-x-2">
-                        <Checkbox id={cat} />
-                        <label htmlFor={cat} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        <Checkbox 
+                          id={cat} 
+                          checked={selectedCategories.includes(cat)}
+                          onCheckedChange={() => toggleCategory(cat)}
+                        />
+                        <label htmlFor={cat} className="text-sm leading-none cursor-pointer">
                           {cat}
                         </label>
                       </div>
@@ -135,7 +109,7 @@ export default function ExplorePage() {
                     <span className="text-xs text-muted-foreground">₹{priceRange[0]} - ₹{priceRange[1]}</span>
                   </div>
                   <Slider 
-                    defaultValue={[0, 1500]} 
+                    value={priceRange} 
                     max={2000} 
                     step={10} 
                     onValueChange={setPriceRange}
@@ -145,7 +119,7 @@ export default function ExplorePage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Sort By</label>
-                  <Select defaultValue="newest">
+                  <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sort order" />
                     </SelectTrigger>
@@ -163,7 +137,7 @@ export default function ExplorePage() {
             <Button 
               variant="outline" 
               className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
-              onClick={() => {setSearchQuery(""); setPriceRange([0, 1500]);}}
+              onClick={resetFilters}
             >
               <X className="h-4 w-4" /> Reset Filters
             </Button>
@@ -174,7 +148,9 @@ export default function ExplorePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
               <div>
                 <h1 className="text-3xl font-bold font-headline">Explore Fresh Yields</h1>
-                <p className="text-muted-foreground">Showing {filteredYields.length} results</p>
+                <p className="text-muted-foreground">
+                  {isLoading ? "Loading yields..." : `Showing ${filteredYields.length} results`}
+                </p>
               </div>
               <div className="relative w-full sm:w-auto">
                 <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -187,22 +163,39 @@ export default function ExplorePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredYields.length > 0 ? (
-                filteredYields.map((item) => (
-                  <YieldCard key={item.id} {...item} />
-                ))
-              ) : (
-                <div className="col-span-full py-12 text-center space-y-4">
-                  <div className="bg-muted inline-block p-6 rounded-full">
-                    <SearchIcon className="h-12 w-12 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-xl font-bold font-headline">No yields found</h3>
-                  <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
-                  <Button onClick={() => {setSearchQuery(""); setPriceRange([0, 1500]);}}>Clear All Filters</Button>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="font-medium text-muted-foreground">Harvesting the latest data...</p>
+              </div>
+            ) : filteredYields.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredYields.map((item) => (
+                  <YieldCard 
+                    key={item.id} 
+                    id={item.id}
+                    name={item.name}
+                    category={item.category}
+                    price={item.price}
+                    unit={item.unit}
+                    farmer={item.farmName || "Local Farmer"}
+                    location={item.farmLocation || "Local Farm"}
+                    rating={item.rating || 5.0}
+                    image={item.imageUrl || ""}
+                    imageHint={item.name}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center space-y-4">
+                <div className="bg-muted inline-block p-6 rounded-full">
+                  <SearchIcon className="h-12 w-12 text-muted-foreground" />
                 </div>
-              )}
-            </div>
+                <h3 className="text-xl font-bold font-headline">No yields found</h3>
+                <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
+                <Button onClick={resetFilters}>Clear All Filters</Button>
+              </div>
+            )}
           </div>
 
         </div>
