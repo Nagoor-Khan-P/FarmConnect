@@ -234,7 +234,6 @@ export default function DashboardPage() {
         address: farmFormData.address
       };
 
-      // Wrap JSON in a Blob with application/json type
       const farmBlob = new Blob([JSON.stringify(farmData)], { type: 'application/json' });
       formData.append('farm', farmBlob);
       
@@ -599,6 +598,7 @@ export default function DashboardPage() {
                                       alt={farm.name} 
                                       fill 
                                       className="object-cover" 
+                                      unoptimized
                                     />
                                   ) : (
                                     <div className="h-full w-full flex items-center justify-center">
@@ -826,6 +826,7 @@ export default function DashboardPage() {
                                                 alt={p.name} 
                                                 fill 
                                                 className="object-cover" 
+                                                unoptimized
                                               />
                                             ) : (
                                               <div className="h-full w-full flex items-center justify-center">
