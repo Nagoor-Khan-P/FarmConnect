@@ -673,13 +673,15 @@ export default function DashboardPage() {
                                 <Plus className="h-4 w-4" /> Add New Yield
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[500px]">
-                              <form onSubmit={handleAddProduct}>
-                                <DialogHeader>
-                                  <DialogTitle>Add New Yield</DialogTitle>
-                                  <DialogDescription>Fill in the details to list your fresh harvest.</DialogDescription>
-                                </DialogHeader>
-                                <ScrollArea className="max-h-[70vh] pr-4">
+                            <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col p-0">
+                              <form onSubmit={handleAddProduct} className="flex flex-col h-full overflow-hidden">
+                                <div className="p-6 pb-2">
+                                  <DialogHeader>
+                                    <DialogTitle>Add New Yield</DialogTitle>
+                                    <DialogDescription>Fill in the details to list your fresh harvest.</DialogDescription>
+                                  </DialogHeader>
+                                </div>
+                                <ScrollArea className="flex-1 px-6">
                                   <div className="grid gap-4 py-4">
                                     <div className="space-y-2">
                                       <Label htmlFor="prod-farm">Select Farm</Label>
@@ -690,6 +692,7 @@ export default function DashboardPage() {
                                         value={newProduct.farmId}
                                         onChange={(e) => setNewProduct({...newProduct, farmId: e.target.value})}
                                       >
+                                        <option value="" disabled>Choose a farm...</option>
                                         {farms.map((f) => (
                                           <option key={f.id} value={f.id}>{f.name}</option>
                                         ))}
@@ -775,7 +778,7 @@ export default function DashboardPage() {
                                       />
                                       <textarea 
                                         id="prod-desc"
-                                        className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                                         placeholder="Describe your yield..."
                                         required
                                         value={newProduct.description}
@@ -784,9 +787,11 @@ export default function DashboardPage() {
                                     </div>
                                   </div>
                                 </ScrollArea>
-                                <DialogFooter className="mt-4">
-                                  <Button type="submit" className="w-full">List Yield</Button>
-                                </DialogFooter>
+                                <div className="p-6 pt-2 border-t mt-auto">
+                                  <DialogFooter>
+                                    <Button type="submit" className="w-full font-bold h-11">List Yield</Button>
+                                  </DialogFooter>
+                                </div>
                               </form>
                             </DialogContent>
                           </Dialog>
@@ -969,16 +974,18 @@ export default function DashboardPage() {
 
         {/* Farm Add/Edit Dialog */}
         <Dialog open={isFarmDialogOpen} onOpenChange={setIsFarmDialogOpen}>
-          <DialogContent className="sm:max-w-[500px] flex flex-col max-h-[90vh]">
-            <form onSubmit={handleSaveFarm} className="flex flex-col h-full">
-              <DialogHeader>
-                <DialogTitle>{editingFarm ? "Edit Farm Details" : "Register New Farm"}</DialogTitle>
-                <DialogDescription>
-                  {editingFarm ? "Update your farm's public information." : "Enter your farm details to start listing your yields."}
-                </DialogDescription>
-              </DialogHeader>
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col p-0">
+            <form onSubmit={handleSaveFarm} className="flex flex-col h-full overflow-hidden">
+              <div className="p-6 pb-2">
+                <DialogHeader>
+                  <DialogTitle>{editingFarm ? "Edit Farm Details" : "Register New Farm"}</DialogTitle>
+                  <DialogDescription>
+                    {editingFarm ? "Update your farm's public information." : "Enter your farm details to start listing your yields."}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
               
-              <ScrollArea className="flex-grow pr-4">
+              <ScrollArea className="flex-1 px-6">
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="farm-name">Farm Name</Label>
@@ -1058,7 +1065,7 @@ export default function DashboardPage() {
                     <Label htmlFor="desc">Farm Story</Label>
                     <textarea 
                       id="desc" 
-                      className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                       placeholder="Tell us about your farm..."
                       value={farmFormData.description}
                       onChange={(e) => setFarmFormData({...farmFormData, description: e.target.value})}
@@ -1067,11 +1074,13 @@ export default function DashboardPage() {
                 </div>
               </ScrollArea>
 
-              <DialogFooter className="pt-4 border-t">
-                <Button type="submit" className="w-full font-bold h-11" disabled={isSavingFarm}>
-                  {isSavingFarm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingFarm ? "Update Farm Profile" : "Add Farm Storefront"}
-                </Button>
-              </DialogFooter>
+              <div className="p-6 pt-2 border-t mt-auto">
+                <DialogFooter>
+                  <Button type="submit" className="w-full font-bold h-11" disabled={isSavingFarm}>
+                    {isSavingFarm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingFarm ? "Update Farm Profile" : "Add Farm Storefront"}
+                  </Button>
+                </DialogFooter>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
