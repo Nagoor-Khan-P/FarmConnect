@@ -444,10 +444,10 @@ export default function DashboardPage() {
   };
 
   const handleConfirmDeleteFarm = async () => {
-    if (!farmToDelete || !user) return;
+    if (!farmToDelete) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/farms/${farmToDelete.id}/farmer/${user.id}`, {
+      const response = await fetch(`http://localhost:8080/api/farms/${farmToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token || '',
