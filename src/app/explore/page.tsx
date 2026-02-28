@@ -81,10 +81,24 @@ export default function ExplorePage() {
           {/* Sidebar Filters */}
           <aside className="w-full md:w-64 space-y-8">
             <div>
-              <h2 className="text-xl font-bold font-headline mb-4 flex items-center gap-2">
+              <h2 className="text-xl font-bold font-headline mb-6 flex items-center gap-2">
                 <Filter className="h-4 w-4" /> Filters
               </h2>
               <div className="space-y-6">
+                {/* Search in Sidebar */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Search</label>
+                  <div className="relative">
+                    <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="e.g. Oranges, Milk..."
+                      className="pl-8"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Category</label>
                   <div className="space-y-2">
@@ -145,22 +159,11 @@ export default function ExplorePage() {
 
           {/* Main Content */}
           <div className="flex-1 space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-              <div>
-                <h1 className="text-3xl font-bold font-headline">Explore Fresh Yields</h1>
-                <p className="text-muted-foreground">
-                  {isLoading ? "Loading yields..." : `Showing ${filteredYields.length} results`}
-                </p>
-              </div>
-              <div className="relative w-full sm:w-auto">
-                <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search yields..."
-                  className="pl-8 w-full sm:w-72"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+            <div className="pb-4 border-b">
+              <h1 className="text-3xl font-bold font-headline">Explore Fresh Yields</h1>
+              <p className="text-muted-foreground mt-1">
+                {isLoading ? "Harvesting the latest data..." : `Showing ${filteredYields.length} fresh results from local farms`}
+              </p>
             </div>
 
             {isLoading ? (
