@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -673,21 +672,22 @@ export default function DashboardPage() {
                                 <Plus className="h-4 w-4" /> Add New Yield
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col p-0">
-                              <form onSubmit={handleAddProduct} className="flex flex-col h-full overflow-hidden">
-                                <div className="p-6 pb-2">
+                            <DialogContent className="sm:max-w-[550px] h-[90vh] flex flex-col p-0 overflow-hidden">
+                              <form onSubmit={handleAddProduct} className="flex flex-col h-full">
+                                <div className="p-6 border-b">
                                   <DialogHeader>
                                     <DialogTitle>Add New Yield</DialogTitle>
                                     <DialogDescription>Fill in the details to list your fresh harvest.</DialogDescription>
                                   </DialogHeader>
                                 </div>
-                                <ScrollArea className="flex-1 px-6">
-                                  <div className="grid gap-4 py-4">
+                                
+                                <ScrollArea className="flex-1">
+                                  <div className="p-6 space-y-4">
                                     <div className="space-y-2">
                                       <Label htmlFor="prod-farm">Select Farm</Label>
                                       <select 
                                         id="prod-farm"
-                                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                                         required
                                         value={newProduct.farmId}
                                         onChange={(e) => setNewProduct({...newProduct, farmId: e.target.value})}
@@ -713,7 +713,7 @@ export default function DashboardPage() {
                                         <Label htmlFor="prod-cat">Category</Label>
                                         <select 
                                           id="prod-cat"
-                                          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                                           value={newProduct.category}
                                           onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
                                         >
@@ -778,7 +778,7 @@ export default function DashboardPage() {
                                       />
                                       <textarea 
                                         id="prod-desc"
-                                        className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                                         placeholder="Describe your yield..."
                                         required
                                         value={newProduct.description}
@@ -787,7 +787,8 @@ export default function DashboardPage() {
                                     </div>
                                   </div>
                                 </ScrollArea>
-                                <div className="p-6 pt-2 border-t mt-auto">
+                                
+                                <div className="p-6 border-t bg-background">
                                   <DialogFooter>
                                     <Button type="submit" className="w-full font-bold h-11">List Yield</Button>
                                   </DialogFooter>
@@ -974,9 +975,9 @@ export default function DashboardPage() {
 
         {/* Farm Add/Edit Dialog */}
         <Dialog open={isFarmDialogOpen} onOpenChange={setIsFarmDialogOpen}>
-          <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col p-0">
-            <form onSubmit={handleSaveFarm} className="flex flex-col h-full overflow-hidden">
-              <div className="p-6 pb-2">
+          <DialogContent className="sm:max-w-[550px] h-[90vh] flex flex-col p-0 overflow-hidden">
+            <form onSubmit={handleSaveFarm} className="flex flex-col h-full">
+              <div className="p-6 border-b">
                 <DialogHeader>
                   <DialogTitle>{editingFarm ? "Edit Farm Details" : "Register New Farm"}</DialogTitle>
                   <DialogDescription>
@@ -985,8 +986,8 @@ export default function DashboardPage() {
                 </DialogHeader>
               </div>
               
-              <ScrollArea className="flex-1 px-6">
-                <div className="grid gap-4 py-4">
+              <ScrollArea className="flex-1">
+                <div className="p-6 space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="farm-name">Farm Name</Label>
                     <Input 
@@ -1061,11 +1062,11 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-2 pb-4">
+                  <div className="space-y-2 pt-2">
                     <Label htmlFor="desc">Farm Story</Label>
                     <textarea 
                       id="desc" 
-                      className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                       placeholder="Tell us about your farm..."
                       value={farmFormData.description}
                       onChange={(e) => setFarmFormData({...farmFormData, description: e.target.value})}
@@ -1074,7 +1075,7 @@ export default function DashboardPage() {
                 </div>
               </ScrollArea>
 
-              <div className="p-6 pt-2 border-t mt-auto">
+              <div className="p-6 border-t bg-background">
                 <DialogFooter>
                   <Button type="submit" className="w-full font-bold h-11" disabled={isSavingFarm}>
                     {isSavingFarm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingFarm ? "Update Farm Profile" : "Add Farm Storefront"}
@@ -1119,7 +1120,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-prod-cat">Category</Label>
-                      <select className="w-full h-10 rounded-md border bg-background px-3" value={editingProduct.category} onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}>
+                      <select className="w-full h-10 rounded-md border bg-background px-3 focus:ring-2 focus:ring-primary" value={editingProduct.category} onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}>
                         <option>Vegetables</option>
                         <option>Fruits</option>
                         <option>Dairy & Eggs</option>
