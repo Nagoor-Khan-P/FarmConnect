@@ -3,7 +3,7 @@
 
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +65,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { AiYieldDescription } from "@/components/AiYieldDescription";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function DashboardPage() {
   const { user, token, logout, isAuthenticated } = useAuth();
@@ -678,110 +679,112 @@ export default function DashboardPage() {
                                   <DialogTitle>Add New Yield</DialogTitle>
                                   <DialogDescription>Fill in the details to list your fresh harvest.</DialogDescription>
                                 </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="prod-farm">Select Farm</Label>
-                                    <select 
-                                      id="prod-farm"
-                                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                      required
-                                      value={newProduct.farmId}
-                                      onChange={(e) => setNewProduct({...newProduct, farmId: e.target.value})}
-                                    >
-                                      {farms.map((f) => (
-                                        <option key={f.id} value={f.id}>{f.name}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
+                                <ScrollArea className="max-h-[70vh] pr-4">
+                                  <div className="grid gap-4 py-4">
                                     <div className="space-y-2">
-                                      <Label htmlFor="prod-name">Yield Name</Label>
-                                      <Input 
-                                        id="prod-name" 
-                                        placeholder="e.g. Fuji Apples" 
-                                        required
-                                        value={newProduct.name}
-                                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="prod-cat">Category</Label>
+                                      <Label htmlFor="prod-farm">Select Farm</Label>
                                       <select 
-                                        id="prod-cat"
+                                        id="prod-farm"
                                         className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                        value={newProduct.category}
-                                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                                        required
+                                        value={newProduct.farmId}
+                                        onChange={(e) => setNewProduct({...newProduct, farmId: e.target.value})}
                                       >
-                                        <option>Vegetables</option>
-                                        <option>Fruits</option>
-                                        <option>Dairy & Eggs</option>
-                                        <option>Bakery</option>
-                                        <option>Pantry</option>
+                                        {farms.map((f) => (
+                                          <option key={f.id} value={f.id}>{f.name}</option>
+                                        ))}
                                       </select>
                                     </div>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-4">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="prod-price">Price (₹)</Label>
-                                      <Input 
-                                        id="prod-price" 
-                                        type="number" 
-                                        required
-                                        value={newProduct.price}
-                                        onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value)})}
-                                      />
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="prod-name">Yield Name</Label>
+                                        <Input 
+                                          id="prod-name" 
+                                          placeholder="e.g. Fuji Apples" 
+                                          required
+                                          value={newProduct.name}
+                                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="prod-cat">Category</Label>
+                                        <select 
+                                          id="prod-cat"
+                                          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                          value={newProduct.category}
+                                          onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                                        >
+                                          <option>Vegetables</option>
+                                          <option>Fruits</option>
+                                          <option>Dairy & Eggs</option>
+                                          <option>Bakery</option>
+                                          <option>Pantry</option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="prod-price">Price (₹)</Label>
+                                        <Input 
+                                          id="prod-price" 
+                                          type="number" 
+                                          required
+                                          value={newProduct.price}
+                                          onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value)})}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="prod-unit">Unit</Label>
+                                        <Input 
+                                          id="prod-unit" 
+                                          placeholder="kg, bunch" 
+                                          required
+                                          value={newProduct.unit}
+                                          onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="prod-stock">Stock</Label>
+                                        <Input 
+                                          id="prod-stock" 
+                                          type="number" 
+                                          required
+                                          value={newProduct.quantity}
+                                          onChange={(e) => setNewProduct({...newProduct, quantity: parseInt(e.target.value)})}
+                                        />
+                                      </div>
                                     </div>
                                     <div className="space-y-2">
-                                      <Label htmlFor="prod-unit">Unit</Label>
-                                      <Input 
-                                        id="prod-unit" 
-                                        placeholder="kg, bunch" 
-                                        required
-                                        value={newProduct.unit}
-                                        onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
-                                      />
+                                      <Label htmlFor="prod-image">Yield Image</Label>
+                                      <div className="flex items-center gap-4">
+                                        <Input 
+                                          id="prod-image" 
+                                          type="file" 
+                                          accept="image/*"
+                                          onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
+                                          className="cursor-pointer"
+                                        />
+                                        {productImageFile && <ImageIcon className="h-6 w-6 text-primary" />}
+                                      </div>
                                     </div>
                                     <div className="space-y-2">
-                                      <Label htmlFor="prod-stock">Stock</Label>
-                                      <Input 
-                                        id="prod-stock" 
-                                        type="number" 
+                                      <AiYieldDescription 
+                                        yieldType={newProduct.name}
+                                        characteristics={["fresh", "local", "organic"]}
+                                        onGenerated={(desc) => setNewProduct({...newProduct, description: desc})}
+                                      />
+                                      <textarea 
+                                        id="prod-desc"
+                                        className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        placeholder="Describe your yield..."
                                         required
-                                        value={newProduct.quantity}
-                                        onChange={(e) => setNewProduct({...newProduct, quantity: parseInt(e.target.value)})}
+                                        value={newProduct.description}
+                                        onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
                                       />
                                     </div>
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="prod-image">Yield Image</Label>
-                                    <div className="flex items-center gap-4">
-                                      <Input 
-                                        id="prod-image" 
-                                        type="file" 
-                                        accept="image/*"
-                                        onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
-                                        className="cursor-pointer"
-                                      />
-                                      {productImageFile && <ImageIcon className="h-6 w-6 text-primary" />}
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <AiYieldDescription 
-                                      yieldType={newProduct.name}
-                                      characteristics={["fresh", "local", "organic"]}
-                                      onGenerated={(desc) => setNewProduct({...newProduct, description: desc})}
-                                    />
-                                    <textarea 
-                                      id="prod-desc"
-                                      className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                      placeholder="Describe your yield..."
-                                      required
-                                      value={newProduct.description}
-                                      onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                                    />
-                                  </div>
-                                </div>
-                                <DialogFooter>
+                                </ScrollArea>
+                                <DialogFooter className="mt-4">
                                   <Button type="submit" className="w-full">List Yield</Button>
                                 </DialogFooter>
                               </form>
@@ -966,101 +969,105 @@ export default function DashboardPage() {
 
         {/* Farm Add/Edit Dialog */}
         <Dialog open={isFarmDialogOpen} onOpenChange={setIsFarmDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <form onSubmit={handleSaveFarm}>
+          <DialogContent className="sm:max-w-[500px] flex flex-col max-h-[90vh]">
+            <form onSubmit={handleSaveFarm} className="flex flex-col h-full">
               <DialogHeader>
                 <DialogTitle>{editingFarm ? "Edit Farm Details" : "Register New Farm"}</DialogTitle>
                 <DialogDescription>
                   {editingFarm ? "Update your farm's public information." : "Enter your farm details to start listing your yields."}
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="farm-name">Farm Name</Label>
-                  <Input 
-                    id="farm-name" 
-                    placeholder="e.g. Green Valley Organic Farm" 
-                    required 
-                    value={farmFormData.name}
-                    onChange={(e) => setFarmFormData({...farmFormData, name: e.target.value})}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="farm-image">Farm Storefront Image</Label>
-                  <div className="flex items-center gap-4">
+              
+              <ScrollArea className="flex-grow pr-4">
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="farm-name">Farm Name</Label>
                     <Input 
-                      id="farm-image" 
-                      type="file" 
-                      accept="image/*"
-                      onChange={(e) => setFarmImageFile(e.target.files?.[0] || null)}
-                      className="cursor-pointer"
+                      id="farm-name" 
+                      placeholder="e.g. Green Valley Organic Farm" 
+                      required 
+                      value={farmFormData.name}
+                      onChange={(e) => setFarmFormData({...farmFormData, name: e.target.value})}
                     />
-                    {farmImageFile && <Upload className="h-6 w-6 text-primary" />}
                   </div>
-                  {editingFarm?.image && !farmImageFile && (
-                    <p className="text-xs text-muted-foreground">Currently using stored image. Upload to change.</p>
-                  )}
-                </div>
-                
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-sm font-bold flex items-center gap-2">
-                    <Home className="h-4 w-4 text-primary" /> Farm Address
-                  </h4>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="street">Street Address</Label>
-                      <Input 
-                        id="street" 
-                        required 
-                        value={farmFormData.address.street}
-                        onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, street: e.target.value}})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input 
-                          id="city" 
-                          required 
-                          value={farmFormData.address.city}
-                          onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, city: e.target.value}})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="state">State</Label>
-                        <Input 
-                          id="state" 
-                          required 
-                          value={farmFormData.address.state}
-                          onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, state: e.target.value}})}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="zip">Zip Code</Label>
-                      <Input 
-                        id="zip" 
-                        required 
-                        value={farmFormData.address.zipCode}
-                        onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, zipCode: e.target.value}})}
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-2 pt-2">
-                  <Label htmlFor="desc">Farm Story</Label>
-                  <textarea 
-                    id="desc" 
-                    className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    placeholder="Tell us about your farm..."
-                    value={farmFormData.description}
-                    onChange={(e) => setFarmFormData({...farmFormData, description: e.target.value})}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="farm-image">Farm Storefront Image</Label>
+                    <div className="flex items-center gap-4">
+                      <Input 
+                        id="farm-image" 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => setFarmImageFile(e.target.files?.[0] || null)}
+                        className="cursor-pointer"
+                      />
+                      {farmImageFile && <Upload className="h-6 w-6 text-primary" />}
+                    </div>
+                    {editingFarm?.image && !farmImageFile && (
+                      <p className="text-xs text-muted-foreground">Currently using stored image. Upload to change.</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-4 pt-2">
+                    <h4 className="text-sm font-bold flex items-center gap-2">
+                      <Home className="h-4 w-4 text-primary" /> Farm Address
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="street">Street Address</Label>
+                        <Input 
+                          id="street" 
+                          required 
+                          value={farmFormData.address.street}
+                          onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, street: e.target.value}})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="city">City</Label>
+                          <Input 
+                            id="city" 
+                            required 
+                            value={farmFormData.address.city}
+                            onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, city: e.target.value}})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="state">State</Label>
+                          <Input 
+                            id="state" 
+                            required 
+                            value={farmFormData.address.state}
+                            onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, state: e.target.value}})}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="zip">Zip Code</Label>
+                        <Input 
+                          id="zip" 
+                          required 
+                          value={farmFormData.address.zipCode}
+                          onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, zipCode: e.target.value}})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 pb-4">
+                    <Label htmlFor="desc">Farm Story</Label>
+                    <textarea 
+                      id="desc" 
+                      className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      placeholder="Tell us about your farm..."
+                      value={farmFormData.description}
+                      onChange={(e) => setFarmFormData({...farmFormData, description: e.target.value})}
+                    />
+                  </div>
                 </div>
-              </div>
-              <DialogFooter>
+              </ScrollArea>
+
+              <DialogFooter className="pt-4 border-t">
                 <Button type="submit" className="w-full font-bold h-11" disabled={isSavingFarm}>
                   {isSavingFarm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingFarm ? "Update Farm Profile" : "Add Farm Storefront"}
                 </Button>
