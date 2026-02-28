@@ -850,7 +850,7 @@ export default function DashboardPage() {
                                       <TableHead>Yield</TableHead>
                                       <TableHead>Category</TableHead>
                                       <TableHead>Price</TableHead>
-                                      <TableHead>Stock</TableHead>
+                                      <TableHead className="text-center">Stock</TableHead>
                                       <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                   </TableHeader>
@@ -879,10 +879,10 @@ export default function DashboardPage() {
                                           <TableCell className="font-medium">{p.name}</TableCell>
                                           <TableCell>{p.category}</TableCell>
                                           <TableCell>₹{p.price} / {p.unit}</TableCell>
-                                          <TableCell>
-                                            <Badge variant={p.quantity < 10 ? "destructive" : "secondary"}>
+                                          <TableCell className="text-center">
+                                            <span className={p.quantity < 10 ? "text-destructive font-bold" : ""}>
                                               {p.quantity} {p.unit}
-                                            </Badge>
+                                            </span>
                                           </TableCell>
                                           <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
