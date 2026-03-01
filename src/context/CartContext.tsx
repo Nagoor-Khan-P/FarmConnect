@@ -135,7 +135,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           headers: { 'Authorization': token }
         });
         if (response.ok) {
-          setCart((prev) => prev.filter((i) => i.id !== id));
+          // Re-fetch the entire cart to ensure local state matches server calculations
+          await fetchServerCart();
         }
       } catch (error) {
         console.error("Error removing from server cart:", error);
@@ -156,7 +157,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     if (isAuthenticated && token) {
       try {
-        // Optimistic UI Update
+        // Optimistic UI Update for immediate feedback
         setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
         
         if (delta === 1) {
@@ -173,11 +174,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           });
           if (!response.ok) {
             await fetchServerCart(); // Revert on failure
+          } else {
+            // Optional: Re-fetch if backend returns computed values (like subtotal) you need
+            await fetchServerCart();
           }
         } else {
-          // Note: If backend lacks a decrement endpoint, we'll keep the local state for now
-          // and only hard-sync if really needed to avoid overwriting optimistic UI with old data
-          // await fetchServerCart(); 
+          // If your backend doesn't have a decrement endpoint, you might need to handle this differently.
+          // For now, we'll refresh to ensure consistency if a decrement occurred on server via other means.
+          await fetchServerCart();
         }
       } catch (error) {
         console.error("Error updating quantity:", error);
