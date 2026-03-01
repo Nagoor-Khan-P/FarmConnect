@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 export type User = {
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  const login = (data: any) => {
+  const login = useCallback((data: any) => {
     const { token, type, ...userData } = data;
     const fullToken = `${type} ${token}`;
     
@@ -55,29 +55,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     localStorage.setItem('farmconnect_token', fullToken);
     localStorage.setItem('farmconnect_user', JSON.stringify(userData));
-  };
+  }, []);
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = useCallback((userData: Partial<User>) => {
     setUser(prev => {
       if (!prev) return null;
       const updated = { ...prev, ...userData };
       localStorage.setItem('farmconnect_user', JSON.stringify(updated));
       return updated;
     });
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('farmconnect_token');
     localStorage.removeItem('farmconnect_user');
     router.push('/');
-  };
+  }, [router]);
 
   const isAuthenticated = !!token;
 
+  const contextValue = useMemo(() => ({
+    user,
+    token,
+    login,
+    updateUser,
+    logout,
+    isAuthenticated
+  }), [user, token, login, updateUser, logout, isAuthenticated]);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, updateUser, logout, isAuthenticated }}>
+    <AuthContext.Provider value={contextValue}>
       {mounted ? children : null}
     </AuthContext.Provider>
   );

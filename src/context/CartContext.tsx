@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 
 export type CartItem = {
@@ -42,7 +42,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
-        // Updated mapping to match the backend DTO structure:
         const items = data.items.map((item: any) => ({
           id: item.id,
           productId: item.productId,
@@ -84,7 +83,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cart, isAuthenticated]);
 
-  const addToCart = async (product: any) => {
+  const addToCart = useCallback(async (product: any) => {
     if (isAuthenticated && token) {
       try {
         const response = await fetch('http://localhost:8080/api/cart/add', {
@@ -126,9 +125,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }];
       });
     }
-  };
+  }, [isAuthenticated, token, fetchServerCart]);
 
-  const removeFromCart = async (id: string) => {
+  const removeFromCart = useCallback(async (id: string) => {
     if (isAuthenticated && token) {
       try {
         const response = await fetch(`http://localhost:8080/api/cart/remove/${id}`, {
@@ -144,44 +143,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } else {
       setCart((prev) => prev.filter((i) => i.id !== id));
     }
-  };
+  }, [isAuthenticated, token, fetchServerCart]);
 
-  const updateQuantity = async (id: string, delta: number) => {
-    const item = cart.find(i => i.id === id);
-    if (!item) return;
+  const updateQuantity = useCallback(async (id: string, delta: number) => {
+    setCart(prev => {
+      const item = prev.find(i => i.id === id);
+      if (!item) return prev;
 
-    if (isAuthenticated && token) {
-      if (delta === -1) {
-        try {
-          const response = await fetch(`http://localhost:8080/api/cart/decrease/${id}`, {
+      if (isAuthenticated && token) {
+        if (delta === -1) {
+          fetch(`http://localhost:8080/api/cart/decrease/${id}`, {
             method: 'POST',
-            headers: { 
-              'Authorization': token 
-            }
-          });
-          if (response.ok) {
-            await fetchServerCart();
+            headers: { 'Authorization': token }
+          }).then(res => { if (res.ok) fetchServerCart(); });
+        } else if (delta === 1) {
+          addToCart(item);
+        }
+        return prev;
+      } else {
+        if (delta === -1) {
+          if (item.quantity === 1) {
+            return prev.filter(i => i.id !== id);
+          } else {
+            return prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
           }
-        } catch (error) {
-          console.error("Error decreasing quantity on server:", error);
-        }
-      } else if (delta === 1) {
-        await addToCart(item);
-      }
-    } else {
-      if (delta === -1) {
-        if (item.quantity === 1) {
-          setCart(prev => prev.filter(i => i.id !== id));
         } else {
-          setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i));
+          return prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i);
         }
-      } else if (delta === 1) {
-        setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
       }
-    }
-  };
+    });
+  }, [isAuthenticated, token, fetchServerCart, addToCart]);
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     if (isAuthenticated && token) {
       try {
         const response = await fetch('http://localhost:8080/api/cart/clear', {
@@ -197,13 +190,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } else {
       setCart([]);
     }
-  };
+  }, [isAuthenticated, token]);
 
   const cartCount = cart.length;
-  const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const cartTotal = useMemo(() => cart.reduce((acc, item) => acc + item.price * item.quantity, 0), [cart]);
+
+  const contextValue = useMemo(() => ({
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    cartCount,
+    cartTotal,
+    isLoading
+  }), [cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal, isLoading]);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal, isLoading }}>
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );
