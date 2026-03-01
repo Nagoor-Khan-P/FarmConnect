@@ -101,7 +101,7 @@ export function AiRecommendations({ userId }: { userId: string }) {
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{item.yieldName}</CardTitle>
-                    <span className="text-xs px-2 py-1 bg-primary/10 rounded-full text-primary font-bold">
+                    <span className="text-xs px-2 py-1 bg-primary/10 rounded-sm text-primary font-bold">
                       {item.category}
                     </span>
                   </div>
