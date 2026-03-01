@@ -29,7 +29,9 @@ import {
   History,
   XCircle,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  Camera,
+  UserEdit
 } from "lucide-react";
 import { 
   Dialog, 
@@ -57,7 +59,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, type User as AuthUser } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
@@ -67,10 +69,22 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
-  const { user, token, logout, isAuthenticated } = useAuth();
+  const { user: authUser, token, logout, isAuthenticated } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
+  // Profile State
+  const [profile, setProfile] = useState<any>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileFormData, setProfileFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: ""
+  });
+
   // Farm State
   const [farms, setFarms] = useState<any[]>([]);
   const [isLoadingFarms, setIsLoadingFarms] = useState(true);
@@ -111,7 +125,7 @@ export default function DashboardPage() {
   const [orderToCancel, setOrderToCancel] = useState<any>(null);
   const [isCancelOrderOpen, setIsCancelOrderOpen] = useState(false);
 
-  const isFarmer = user?.roles.includes('ROLE_FARMER');
+  const isFarmer = authUser?.roles.includes('ROLE_FARMER');
 
   const resolveImageUrl = (path: string) => {
     if (!path) return null;
@@ -119,6 +133,29 @@ export default function DashboardPage() {
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `http://localhost:8080${cleanPath}`;
   };
+
+  const fetchProfile = useCallback(async () => {
+    if (!token) return;
+    setIsProfileLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/users/profile', {
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data);
+        setProfileFormData({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || ""
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    } finally {
+      setIsProfileLoading(false);
+    }
+  }, [token]);
 
   const fetchAddresses = useCallback(async () => {
     if (!token) return;
@@ -218,6 +255,7 @@ export default function DashboardPage() {
       return;
     }
 
+    fetchProfile();
     if (isFarmer) {
       fetchMyFarms();
       fetchMyProducts();
@@ -226,7 +264,39 @@ export default function DashboardPage() {
       fetchHistoryOrders();
     }
     fetchAddresses();
-  }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchActiveOrders, fetchHistoryOrders, fetchAddresses, router]);
+  }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchActiveOrders, fetchHistoryOrders, fetchAddresses, fetchProfile, router]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProfileSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('firstName', profileFormData.firstName);
+      formData.append('lastName', profileFormData.lastName);
+      formData.append('email', profileFormData.email);
+      if (profileImageFile) {
+        formData.append('image', profileImageFile);
+      }
+
+      const response = await fetch('http://localhost:8080/api/users/profile', {
+        method: 'PUT',
+        headers: { 'Authorization': token || '' },
+        body: formData
+      });
+
+      if (response.ok) {
+        toast({ title: "Profile Updated", description: "Your account details have been saved successfully." });
+        setIsEditProfileOpen(false);
+        fetchProfile();
+      } else {
+        throw new Error("Failed to update profile");
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Update Failed", description: error.message });
+    } finally {
+      setIsProfileSaving(false);
+    }
+  };
 
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,7 +405,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (!user) return null;
+  if (!authUser) return null;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -345,16 +415,28 @@ export default function DashboardPage() {
           <aside className="w-full md:w-64 space-y-4">
             <Card>
               <CardContent className="p-6 text-center">
-                <div className="h-20 w-20 rounded-full bg-primary/20 mx-auto mb-4 flex items-center justify-center border-2 border-primary/20">
-                  <User className="h-10 w-10 text-primary" />
+                <div className="relative h-24 w-24 rounded-full bg-primary/20 mx-auto mb-4 border-2 border-primary/20 overflow-hidden">
+                  {profile?.imageUrl ? (
+                    <Image 
+                      src={resolveImageUrl(profile.imageUrl)!} 
+                      alt={profile.username} 
+                      fill 
+                      className="object-cover" 
+                      unoptimized 
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <User className="h-12 w-12 text-primary" />
+                    </div>
+                  )}
                 </div>
-                <h3 className="font-bold text-lg">{user.firstName} {user.lastName}</h3>
+                <h3 className="font-bold text-lg">{profile?.firstName || authUser.firstName} {profile?.lastName || authUser.lastName}</h3>
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">
-                  {user.roles[0]?.replace('ROLE_', '') || 'User'}
+                  {authUser.roles[0]?.replace('ROLE_', '') || 'User'}
                 </p>
                 <div className="mt-6 space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2 justify-center">
-                    <Mail className="h-3 w-3" /> {user.email}
+                    <Mail className="h-3 w-3" /> {profile?.email || authUser.email}
                   </div>
                 </div>
                 <Button 
@@ -373,7 +455,7 @@ export default function DashboardPage() {
               <h1 className="text-3xl font-bold font-headline">
                 {isFarmer ? "Farmer Command Center" : "Account Dashboard"}
               </h1>
-              <p className="text-muted-foreground mt-1">Welcome back, {user.username}!</p>
+              <p className="text-muted-foreground mt-1">Welcome back, {profile?.username || authUser.username}!</p>
             </div>
             
             <Tabs defaultValue={isFarmer ? "farm" : "active-orders"} className="space-y-6">
@@ -539,13 +621,38 @@ export default function DashboardPage() {
 
               <TabsContent value="profile" className="space-y-6">
                 <Card>
-                  <CardHeader><CardTitle>Personal Details</CardTitle></CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div><p className="text-xs font-bold text-muted-foreground uppercase">Full Name</p><p className="text-lg font-medium">{user.firstName} {user.lastName}</p></div>
-                      <div><p className="text-xs font-bold text-muted-foreground uppercase">Username</p><p className="text-lg font-medium">{user.username}</p></div>
-                      <div><p className="text-xs font-bold text-muted-foreground uppercase">Email Address</p><p className="text-lg font-medium">{user.email}</p></div>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Personal Details</CardTitle>
+                      <CardDescription>View and manage your account information.</CardDescription>
                     </div>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditProfileOpen(true)} className="gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors">
+                      <UserEdit className="h-4 w-4" /> Edit Profile
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {isProfileLoading ? (
+                      <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">First Name</p>
+                          <p className="text-lg font-medium">{profile?.firstName || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Last Name</p>
+                          <p className="text-lg font-medium">{profile?.lastName || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Username</p>
+                          <p className="text-lg font-medium">@{profile?.username || authUser.username}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Email Address</p>
+                          <p className="text-lg font-medium">{profile?.email || authUser.email}</p>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -576,12 +683,12 @@ export default function DashboardPage() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {addresses.map((addr) => (
-                          <Card key={addr.id} className="relative border-2 border-border hover:border-primary/50 transition-colors">
-                            <CardContent className="p-5">
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="font-bold text-lg truncate pr-12">{addr.street}</p>
+                          <Card key={addr.id} className="relative border-2 border-border hover:border-primary/50 transition-colors flex flex-col h-full">
+                            <CardContent className="p-5 flex-grow">
+                              <div className="flex items-center justify-between mb-2 gap-2">
+                                <p className="font-bold text-lg truncate leading-tight">{addr.street}</p>
                                 {addr.isDefault && (
-                                  <Badge className="bg-primary text-primary-foreground pointer-events-none rounded-sm px-2 text-[10px] uppercase font-bold">
+                                  <Badge className="bg-primary text-primary-foreground pointer-events-none rounded-sm px-2 text-[10px] uppercase font-bold shrink-0">
                                     Default
                                   </Badge>
                                 )}
@@ -632,6 +739,95 @@ export default function DashboardPage() {
             </Tabs>
           </div>
         </div>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <form onSubmit={handleUpdateProfile}>
+              <DialogHeader>
+                <DialogTitle>Update Your Profile</DialogTitle>
+                <DialogDescription>Modify your account details and profile picture.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-6 py-6">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative h-24 w-24 rounded-full bg-muted border overflow-hidden">
+                    {profileImageFile ? (
+                      <Image 
+                        src={URL.createObjectURL(profileImageFile)} 
+                        alt="Preview" 
+                        fill 
+                        className="object-cover" 
+                      />
+                    ) : profile?.imageUrl ? (
+                      <Image 
+                        src={resolveImageUrl(profile.imageUrl)!} 
+                        alt="Current" 
+                        fill 
+                        className="object-cover" 
+                        unoptimized 
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center">
+                        <User className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                    )}
+                    <label 
+                      htmlFor="profile-image-upload" 
+                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <Camera className="h-6 w-6 text-white" />
+                    </label>
+                    <input 
+                      id="profile-image-upload" 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)} 
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Click the image to upload a new photo</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input 
+                      id="firstName" 
+                      value={profileFormData.firstName} 
+                      onChange={(e) => setProfileFormData({...profileFormData, firstName: e.target.value})} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input 
+                      id="lastName" 
+                      value={profileFormData.lastName} 
+                      onChange={(e) => setProfileFormData({...profileFormData, lastName: e.target.value})} 
+                      required 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={profileFormData.email} 
+                    onChange={(e) => setProfileFormData({...profileFormData, email: e.target.value})} 
+                    required 
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full h-11 font-bold" disabled={isProfileSaving}>
+                  {isProfileSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {/* Global Dialogs */}
         <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
@@ -773,7 +969,7 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
             </TableCell>
             <TableCell className="font-bold text-primary">₹{order.totalPrice?.toFixed(2)}</TableCell>
             <TableCell>
-              <Badge variant="secondary" className="bg-primary/10 text-primary uppercase text-[10px]">
+              <Badge variant="secondary" className="bg-primary/10 text-primary uppercase text-[10px] rounded-sm">
                 {order.status}
               </Badge>
             </TableCell>
