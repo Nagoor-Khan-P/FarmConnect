@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Star, MapPin } from "lucide-react";
+import { ShoppingBag, Star, MapPin, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,10 +35,14 @@ export function YieldCard({
   image,
   imageHint
 }: YieldCardProps) {
-  const { addToCart } = useCart();
+  const { addToCart, cart } = useCart();
   const { toast } = useToast();
 
-  const handleAddToCart = () => {
+  const isInCart = cart.some(item => item.productId === id || item.id === id);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     addToCart({ id, name, price, image, unit, farmer });
     toast({
       title: "Added to basket",
@@ -68,7 +72,7 @@ export function YieldCard({
             data-ai-hint={imageHint}
             unoptimized
           />
-          <Badge className="absolute top-2 left-2 bg-secondary text-secondary-foreground">
+          <Badge className="absolute top-2 left-2 bg-secondary text-secondary-foreground rounded-sm">
             {category}
           </Badge>
         </div>
@@ -94,12 +98,23 @@ export function YieldCard({
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
-        <Button 
-          onClick={handleAddToCart}
-          className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-        >
-          <ShoppingBag className="h-4 w-4" /> Add to Basket
-        </Button>
+        {isInCart ? (
+          <Button 
+            asChild
+            className="w-full gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold border border-primary/20"
+          >
+            <Link href="/cart">
+              <Check className="h-4 w-4" /> View In Basket
+            </Link>
+          </Button>
+        ) : (
+          <Button 
+            onClick={handleAddToCart}
+            className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+          >
+            <ShoppingBag className="h-4 w-4" /> Add to Basket
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

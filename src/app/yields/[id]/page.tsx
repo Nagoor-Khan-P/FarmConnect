@@ -6,7 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Star, MapPin, Truck, ShieldCheck, ShoppingBag, ArrowLeft, Heart, Loader2 } from "lucide-react";
+import { Star, MapPin, Truck, ShieldCheck, ShoppingBag, ArrowLeft, Heart, Loader2, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -15,10 +15,12 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function YieldDetailPage() {
   const { id } = useParams();
-  const { addToCart } = useCart();
+  const { addToCart, cart } = useCart();
   const { toast } = useToast();
   const [yieldItem, setYieldItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const isInCart = cart.some(item => item.productId === id || item.id === id);
 
   useEffect(() => {
     async function fetchDetails() {
@@ -117,7 +119,7 @@ export default function YieldDetailPage() {
           {/* Product Info */}
           <div className="space-y-6">
             <div className="space-y-2">
-              <Badge variant="secondary" className="bg-primary/10 text-primary font-bold">
+              <Badge variant="secondary" className="bg-primary/10 text-primary font-bold rounded-sm">
                 {yieldItem.category}
               </Badge>
               <h1 className="text-4xl font-bold font-headline">{yieldItem.name}</h1>
@@ -155,9 +157,17 @@ export default function YieldDetailPage() {
             <Separator />
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={handleAddToCart} size="lg" className="flex-1 gap-2 h-14 text-lg font-bold">
-                <ShoppingBag className="h-5 w-5" /> Add to Basket
-              </Button>
+              {isInCart ? (
+                <Button asChild size="lg" className="flex-1 gap-2 h-14 text-lg font-bold bg-secondary hover:bg-secondary/90 text-secondary-foreground border border-primary/20">
+                  <Link href="/cart">
+                    <Check className="h-5 w-5" /> View In Basket
+                  </Link>
+                </Button>
+              ) : (
+                <Button onClick={handleAddToCart} size="lg" className="flex-1 gap-2 h-14 text-lg font-bold">
+                  <ShoppingBag className="h-5 w-5" /> Add to Basket
+                </Button>
+              )}
               <Button size="lg" variant="outline" className="h-14 w-14 p-0">
                 <Heart className="h-6 w-6" />
               </Button>
