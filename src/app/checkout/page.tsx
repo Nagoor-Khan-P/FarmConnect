@@ -148,7 +148,7 @@ export default function CheckoutPage() {
     
     setIsProcessingOrder(true);
     try {
-      const response = await fetch('http://localhost:8080/api/orders', {
+      const response = await fetch('http://localhost:8080/api/orders/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
