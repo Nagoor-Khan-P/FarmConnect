@@ -43,14 +43,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         // Updated mapping to match the backend DTO structure:
-        // private UUID id; (cartItemId)
-        // private UUID productId;
-        // private String productName;
-        // private int quantity;
-        // private double price;
-        // private String imageUrl;
-        // private String farmName;
-        // private String farmerName;
         const items = data.items.map((item: any) => ({
           id: item.id,
           productId: item.productId,
@@ -161,7 +153,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && token) {
       if (delta === -1) {
         try {
-          // Decrement quantity using POST /api/cart/decrease/{cartItemId}
           const response = await fetch(`http://localhost:8080/api/cart/decrease/${id}`, {
             method: 'POST',
             headers: { 
@@ -178,7 +169,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         await addToCart(item);
       }
     } else {
-      // Guest user local logic
       if (delta === -1) {
         if (item.quantity === 1) {
           setCart(prev => prev.filter(i => i.id !== id));
@@ -209,7 +199,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const cartCount = cart.length;
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   return (

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Navbar } from "@/components/Navbar";
@@ -108,11 +107,11 @@ export default function CartPage() {
                         </Button>
                       </div>
                       <div className="flex justify-between items-center mt-4">
-                        <div className="flex items-center border rounded-md bg-background">
+                        <div className="flex items-center border rounded-md bg-background overflow-hidden">
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8"
+                            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-none"
                             onClick={() => updateQuantity(item.id, -1)}
                           >
                             <Minus className="h-3 w-3" />
@@ -121,7 +120,7 @@ export default function CartPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8"
+                            className="h-8 w-8 transition-colors rounded-none"
                             onClick={() => updateQuantity(item.id, 1)}
                           >
                             <Plus className="h-3 w-3" />
@@ -152,7 +151,7 @@ export default function CartPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal ({cartCount} items)</span>
+                    <span className="text-muted-foreground">Subtotal ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
                     <span className="font-medium">₹{cartTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
