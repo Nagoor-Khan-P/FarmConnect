@@ -111,7 +111,7 @@ export default function CartPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-none"
+                            className="h-8 w-8 hover:bg-destructive/20 hover:text-destructive transition-colors rounded-none"
                             onClick={() => updateQuantity(item.id, -1)}
                           >
                             <Minus className="h-3 w-3" />
