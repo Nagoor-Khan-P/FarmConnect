@@ -666,6 +666,14 @@ export default function DashboardPage() {
                           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Email Address</p>
                           <p className="text-lg font-medium">{profile?.email || authUser.email}</p>
                         </div>
+                        {profile?.registeredDate && (
+                          <div>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Member Since</p>
+                            <p className="text-lg font-medium">
+                              {format(new Date(profile.registeredDate), 'MMM dd, yyyy')}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
