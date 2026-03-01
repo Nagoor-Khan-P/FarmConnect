@@ -28,12 +28,13 @@ import {
   Pencil,
   Box,
   Home,
-  Image as ImageIcon,
+  ImageIcon,
   Upload,
   Globe,
   Calendar,
   Clock,
-  History
+  History,
+  XCircle
 } from "lucide-react";
 import { 
   Dialog, 
@@ -71,18 +72,6 @@ import { useToast } from "@/hooks/use-toast";
 import { AiYieldDescription } from "@/components/AiYieldDescription";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-
-const YIELD_UNITS = [
-  "kg", 
-  "g", 
-  "bunch", 
-  "dozen", 
-  "piece", 
-  "jar", 
-  "L", 
-  "box", 
-  "bag"
-];
 
 export default function DashboardPage() {
   const { user, token, logout, isAuthenticated } = useAuth();
@@ -130,6 +119,8 @@ export default function DashboardPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<any>(null);
+  const [isCancelOrderOpen, setIsCancelOrderOpen] = useState(false);
   
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -264,26 +255,36 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchMySales, fetchActiveOrders, fetchHistoryOrders, router]);
 
-  const groupedProducts = useMemo(() => {
-    const groups: Record<string, { farm: any; products: any[] }> = {};
-    products.forEach((p) => {
-      const farmId = p.farmId || p.farm?.id || "unassigned";
-      const farmName = p.farmName || p.farm?.name || "Unassigned Yields";
-      
-      if (!groups[farmId]) {
-        groups[farmId] = {
-          farm: { 
-            id: farmId, 
-            name: farmName, 
-            address: p.farm?.address || {} 
-          },
-          products: [],
-        };
+  const handleCancelOrder = async () => {
+    if (!orderToCancel || !token) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8080/api/orders/${orderToCancel.id}/cancel`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Order Cancelled",
+          description: "Your order has been successfully cancelled.",
+        });
+        fetchActiveOrders();
+        fetchHistoryOrders();
+      } else {
+        throw new Error("Failed to cancel order");
       }
-      groups[farmId].products.push(p);
-    });
-    return groups;
-  }, [products]);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Cancellation Failed",
+        description: error.message
+      });
+    } finally {
+      setIsCancelOrderOpen(false);
+      setOrderToCancel(null);
+    }
+  };
 
   const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -477,7 +478,13 @@ export default function DashboardPage() {
                             <Button asChild className="mt-4"><Link href="/explore">Shop Now</Link></Button>
                           </div>
                         ) : (
-                          <OrderTable orders={activeOrders} />
+                          <OrderTable 
+                            orders={activeOrders} 
+                            onCancel={(order) => {
+                              setOrderToCancel(order);
+                              setIsCancelOrderOpen(true);
+                            }}
+                          />
                         )}
                       </CardContent>
                     </Card>
@@ -514,7 +521,6 @@ export default function DashboardPage() {
               {isFarmer && (
                 <>
                   <TabsContent value="farm">
-                    {/* ... Farmer farm content same as before ... */}
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold font-headline">Manage Your Farm Storefronts</h3>
                       <Button onClick={openAddFarmDialog} className="gap-2"><Plus className="h-4 w-4" /> Add Farm</Button>
@@ -553,7 +559,6 @@ export default function DashboardPage() {
                     )}
                   </TabsContent>
                   
-                  {/* ... other Farmer tabs content same as before ... */}
                   <TabsContent value="inventory">
                      <Card className="shadow-sm">
                       <CardHeader className="flex flex-row items-center justify-between">
@@ -665,6 +670,26 @@ export default function DashboardPage() {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Cancel Order Confirm */}
+        <AlertDialog open={isCancelOrderOpen} onOpenChange={setIsCancelOrderOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-destructive" /> Cancel Order?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to cancel this order? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Order</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Cancel Order
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Farm Dialog */}
         <Dialog open={isFarmDialogOpen} onOpenChange={setIsFarmDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
@@ -688,7 +713,7 @@ export default function DashboardPage() {
   );
 }
 
-function OrderTable({ orders }: { orders: any[] }) {
+function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: any) => void }) {
   return (
     <Table>
       <TableHeader>
@@ -698,6 +723,7 @@ function OrderTable({ orders }: { orders: any[] }) {
           <TableHead>Items</TableHead>
           <TableHead>Total</TableHead>
           <TableHead>Status</TableHead>
+          {onCancel && <TableHead className="text-right">Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -725,6 +751,18 @@ function OrderTable({ orders }: { orders: any[] }) {
                 {order.status}
               </Badge>
             </TableCell>
+            {onCancel && (
+              <TableCell className="text-right">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={() => onCancel(order)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            )}
           </TableRow>
         ))}
       </TableBody>
