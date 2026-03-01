@@ -5,8 +5,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from './AuthContext';
 
 export type CartItem = {
-  id: string; // This will be the cartItemId from backend or product.id for guest
-  productId?: string;
+  id: string; // This is the cartItemId (UUID from backend)
+  productId: string;
   name: string;
   price: number;
   image: string;
@@ -42,17 +42,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
-        // Map backend CartResponse items to frontend CartItem type with flexible key checking
+        // Map backend CartResponse items based on the new updated DTO
         const items = data.items.map((item: any) => ({
-          id: item.id, // backend cart item id
+          id: item.id, // backend cart item UUID
           productId: item.productId,
-          name: item.productName || item.name,
+          name: item.productName,
           price: item.price,
           quantity: item.quantity,
-          unit: item.unit || 'kg',
-          // Support various backend DTO naming conventions
-          farmer: item.farmName || item.productFarmName || item.farmerName || 'Local Farmer',
-          image: item.imageUrl || item.productImageUrl || item.imagePath || ''
+          unit: item.unit || 'kg', // Fallback if unit is missing in DTO
+          farmer: item.farmName || item.farmerName || 'Local Farmer',
+          image: item.imageUrl || ''
         }));
         setCart(items);
       }
@@ -108,18 +107,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     } else {
       setCart((prev) => {
-        const existing = prev.find((i) => i.id === product.id);
+        const existing = prev.find((i) => (i.productId === product.id || i.id === product.id));
         if (existing) {
           return prev.map((i) =>
-            i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+            (i.productId === product.id || i.id === product.id) ? { ...i, quantity: i.quantity + 1 } : i
           );
         }
         return [...prev, { 
           id: product.id, 
+          productId: product.id,
           name: product.name, 
           price: product.price, 
           image: product.image || product.imageUrl || '', 
-          unit: product.unit, 
+          unit: product.unit || 'kg', 
           farmer: product.farmer || product.farmName || 'Local Farmer',
           quantity: 1 
         }];
@@ -146,18 +146,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateQuantity = async (id: string, delta: number) => {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+
+    if (delta === -1 && item.quantity === 1) {
+      removeFromCart(id);
+      return;
+    }
+
     if (isAuthenticated && token) {
-      const item = cart.find(i => i.id === id);
-      if (!item) return;
-
-      if (delta === -1 && item.quantity === 1) {
-        removeFromCart(id);
-        return;
-      }
-
       try {
+        // Optimistic update
         setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
         
+        // In the backend, adding with quantity 1 increments or we might need a specific update qty endpoint.
+        // Assuming /add adds to existing quantity.
         if (delta === 1) {
           await fetch('http://localhost:8080/api/cart/add', {
             method: 'POST',
@@ -166,13 +169,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               'Authorization': token
             },
             body: JSON.stringify({
-              productId: item.productId || item.id,
+              productId: item.productId,
               quantity: 1
             })
           });
+        } else {
+          // If the backend lacks a direct "decrement" endpoint, we'd typically need one.
+          // For now, refreshing is safer if we can't decrement.
+          fetchServerCart();
         }
       } catch (error) {
         console.error("Error updating quantity:", error);
+        fetchServerCart(); // Revert on error
       }
     } else {
       setCart((prev) =>
