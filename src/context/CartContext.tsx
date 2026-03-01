@@ -42,8 +42,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
+        // Updated mapping to match the backend DTO structure:
+        // private UUID id; (cartItemId)
+        // private UUID productId;
+        // private String productName;
+        // private int quantity;
+        // private double price;
+        // private String imageUrl;
+        // private String farmName;
+        // private String farmerName;
         const items = data.items.map((item: any) => ({
-          id: item.id, // backend cart item UUID
+          id: item.id,
           productId: item.productId,
           name: item.productName,
           price: item.price,
@@ -105,10 +114,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     } else {
       setCart((prev) => {
-        const existing = prev.find((i) => (i.productId === product.id || i.id === product.id));
+        const targetId = product.productId || product.id;
+        const existing = prev.find((i) => (i.productId === targetId || i.id === targetId));
         if (existing) {
           return prev.map((i) =>
-            (i.productId === product.id || i.id === product.id) ? { ...i, quantity: i.quantity + 1 } : i
+            (i.productId === targetId || i.id === targetId) ? { ...i, quantity: i.quantity + 1 } : i
           );
         }
         return [...prev, { 
@@ -151,10 +161,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && token) {
       if (delta === -1) {
         try {
-          // Call the specialized decrease endpoint
+          // Decrement quantity using POST /api/cart/decrease/{cartItemId}
           const response = await fetch(`http://localhost:8080/api/cart/decrease/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': token }
+            method: 'POST',
+            headers: { 
+              'Authorization': token 
+            }
           });
           if (response.ok) {
             await fetchServerCart();
