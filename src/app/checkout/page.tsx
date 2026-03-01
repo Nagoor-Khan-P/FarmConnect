@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Globe,
   Home,
-  Check
+  Check,
+  PackageCheck
 } from "lucide-react";
 import { 
   Dialog, 
@@ -80,13 +81,18 @@ export default function CheckoutPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setAddresses(data);
+        // Ensure isDefault is correctly mapped even if backend uses defaultAddress
+        const mappedData = data.map((addr: any) => ({
+          ...addr,
+          isDefault: addr.isDefault || addr.defaultAddress || false
+        }));
+        setAddresses(mappedData);
         
-        // Auto-select default address on first load if nothing is selected
+        // Auto-select default address on load if nothing is selected
         if (!selectedAddressId) {
-          const defaultAddr = data.find((a: Address) => a.isDefault);
+          const defaultAddr = mappedData.find((a: Address) => a.isDefault);
           if (defaultAddr) setSelectedAddressId(defaultAddr.id);
-          else if (data.length > 0) setSelectedAddressId(data[0].id);
+          else if (mappedData.length > 0) setSelectedAddressId(mappedData[0].id);
         }
       }
     } catch (error) {
@@ -239,7 +245,7 @@ export default function CheckoutPage() {
                     <Card 
                       key={addr.id} 
                       className={cn(
-                        "relative cursor-pointer transition-all border-2 overflow-hidden",
+                        "relative cursor-pointer transition-all border-2 overflow-hidden flex flex-col h-full",
                         selectedAddressId === addr.id 
                           ? "border-primary shadow-md bg-primary/5" 
                           : "border-border hover:border-primary/50"
@@ -247,14 +253,14 @@ export default function CheckoutPage() {
                       onClick={() => setSelectedAddressId(addr.id)}
                     >
                       {selectedAddressId === addr.id && (
-                        <div className="absolute top-0 right-0 bg-primary text-primary-foreground p-1 rounded-bl-lg">
-                          <Check className="h-3 w-3" />
+                        <div className="absolute top-0 right-0 bg-primary text-primary-foreground p-1 rounded-bl-lg z-10">
+                          <Check className="h-4 w-4" />
                         </div>
                       )}
-                      <CardContent className="p-5">
+                      <CardContent className="p-5 flex-grow">
                         <div className="space-y-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-bold text-lg leading-tight">{addr.street}</p>
+                          <div className="flex items-center justify-between mb-2 gap-2">
+                            <p className="font-bold text-lg leading-tight truncate">{addr.street}</p>
                             {addr.isDefault && (
                               <Badge className="bg-primary/20 text-primary border-none text-[10px] uppercase font-bold shrink-0">
                                 Default
@@ -268,35 +274,55 @@ export default function CheckoutPage() {
                         </div>
                       </CardContent>
                       <Separator />
-                      <CardFooter className="p-2 flex justify-between bg-muted/20">
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-primary" 
-                            onClick={(e) => { e.stopPropagation(); openEditDialog(addr); }}
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10" 
-                            onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                      <CardFooter className="p-2 flex flex-col gap-2 bg-muted/20">
+                        <div className="flex justify-between items-center w-full">
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-primary" 
+                              onClick={(e) => { e.stopPropagation(); openEditDialog(addr); }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10" 
+                              onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          
+                          {/* Only show "Set Default" if it's not already default */}
+                          {!addr.isDefault && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleSetDefault(addr.id); }}
+                            >
+                              Set Default
+                            </Button>
+                          )}
                         </div>
-                        {!addr.isDefault && (
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            className="h-8 text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors"
-                            onClick={(e) => { e.stopPropagation(); handleSetDefault(addr.id); }}
-                          >
-                            Set Default
-                          </Button>
-                        )}
+                        
+                        <Button 
+                          variant={selectedAddressId === addr.id ? "default" : "secondary"}
+                          size="sm"
+                          className={cn(
+                            "w-full h-8 text-xs font-bold gap-1",
+                            selectedAddressId === addr.id ? "bg-primary" : ""
+                          )}
+                          onClick={(e) => { e.stopPropagation(); setSelectedAddressId(addr.id); }}
+                        >
+                          {selectedAddressId === addr.id ? (
+                            <>
+                              <PackageCheck className="h-3 w-3" /> Selected for Shipping
+                            </>
+                          ) : "Ship to this address"}
+                        </Button>
                       </CardFooter>
                     </Card>
                   ))}
