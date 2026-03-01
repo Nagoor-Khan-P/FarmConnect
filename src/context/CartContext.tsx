@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -41,16 +42,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
-        // Map backend CartResponse items to frontend CartItem type
+        // Map backend CartResponse items to frontend CartItem type with flexible key checking
         const items = data.items.map((item: any) => ({
           id: item.id, // backend cart item id
           productId: item.productId,
-          name: item.productName,
+          name: item.productName || item.name,
           price: item.price,
           quantity: item.quantity,
           unit: item.unit || 'kg',
-          farmer: item.farmName || 'Local Farmer',
-          image: item.imageUrl || ''
+          // Support various backend DTO naming conventions
+          farmer: item.farmName || item.productFarmName || item.farmerName || 'Local Farmer',
+          image: item.imageUrl || item.productImageUrl || item.imagePath || ''
         }));
         setCart(items);
       }
@@ -116,9 +118,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           id: product.id, 
           name: product.name, 
           price: product.price, 
-          image: product.image || product.imageUrl, 
+          image: product.image || product.imageUrl || '', 
           unit: product.unit, 
-          farmer: product.farmer || product.farmName,
+          farmer: product.farmer || product.farmName || 'Local Farmer',
           quantity: 1 
         }];
       });
@@ -144,9 +146,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateQuantity = async (id: string, delta: number) => {
-    // For simplicity, if authenticated, we re-add with quantity 1 (if delta is +1)
-    // Most backends handle repeated adds as increments.
-    // If delta is -1, backend support might vary. Here we handle local and refresh.
     if (isAuthenticated && token) {
       const item = cart.find(i => i.id === id);
       if (!item) return;
@@ -157,13 +156,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        // If your backend has an update endpoint, use it here. 
-        // Otherwise, adding with quantity 1 usually increments.
-        // For -1, we might need a specific endpoint not shown in your snippet.
-        // We'll update local state optimistically.
         setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
         
-        // Example: Add 1 via API
         if (delta === 1) {
           await fetch('http://localhost:8080/api/cart/add', {
             method: 'POST',
@@ -177,7 +171,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             })
           });
         }
-        // Note: For -1, you'd ideally have a /decrease or /update endpoint.
       } catch (error) {
         console.error("Error updating quantity:", error);
       }

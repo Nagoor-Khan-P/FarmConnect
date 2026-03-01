@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Navbar } from "@/components/Navbar";
@@ -7,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 
@@ -21,8 +22,9 @@ export default function CartPage() {
   }, []);
 
   // Helper to resolve backend image paths
-  const resolveImageUrl = (path: string) => {
-    if (!path) return "https://picsum.photos/seed/default/400/300";
+  const resolveImageUrl = (item: CartItem) => {
+    const path = item.image;
+    if (!path) return `https://picsum.photos/seed/${item.productId || item.id}/400/300`;
     if (path.startsWith('http') || path.startsWith('data:')) return path;
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `http://localhost:8080${cleanPath}`;
@@ -70,7 +72,7 @@ export default function CartPage() {
                   <div className="flex flex-col sm:flex-row">
                     <div className="relative w-full sm:w-32 h-32">
                       <Image 
-                        src={resolveImageUrl(item.image)} 
+                        src={resolveImageUrl(item)} 
                         alt={item.name} 
                         fill 
                         className="object-cover"
