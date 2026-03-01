@@ -81,10 +81,10 @@ export default function CheckoutPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        // Ensure isDefault is correctly mapped even if backend uses defaultAddress
+        // Correctly map the 'default' field from backend response to 'isDefault'
         const mappedData = data.map((addr: any) => ({
           ...addr,
-          isDefault: addr.isDefault || addr.defaultAddress || false
+          isDefault: addr.default === true || addr.isDefault === true || addr.defaultAddress === true
         }));
         setAddresses(mappedData);
         
@@ -295,7 +295,7 @@ export default function CheckoutPage() {
                             </Button>
                           </div>
                           
-                          {/* Only show "Set Default" if it's not already default */}
+                          {/* Only show "Set Default" if it's not already default. Button is hidden for default addresses. */}
                           {!addr.isDefault && (
                             <Button 
                               variant="outline" 
