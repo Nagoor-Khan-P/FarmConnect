@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams } from "next/navigation";
@@ -6,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Star, MapPin, Truck, ShieldCheck, ShoppingBag, ArrowLeft, Heart, Loader2, Check } from "lucide-react";
+import { Star, MapPin, Truck, ShieldCheck, ShoppingBag, ArrowLeft, Heart, Loader2, Check, Store, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -53,7 +52,8 @@ export default function YieldDetailPage() {
       price: yieldItem.price,
       image: resolveImageUrl(yieldItem.imageUrl || yieldItem.image),
       unit: yieldItem.unit,
-      farmer: yieldItem.farmName || yieldItem.farmer
+      farmName: yieldItem.farmName,
+      farmerName: yieldItem.farmerName
     });
     toast({
       title: "Added to basket",
@@ -123,13 +123,17 @@ export default function YieldDetailPage() {
                 {yieldItem.category}
               </Badge>
               <h1 className="text-4xl font-bold font-headline">{yieldItem.name}</h1>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-1 text-secondary font-bold">
                   <Star className="h-4 w-4 fill-current" /> {yieldItem.rating || "5.0"}
                   <span className="text-muted-foreground font-normal">({yieldItem.reviews || 0} reviews)</span>
                 </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                  <Store className="h-4 w-4 text-primary" />
+                  {yieldItem.farmName || "Local Farm"}
+                </div>
                 <div className="flex items-center gap-1 text-muted-foreground">
-                  <MapPin className="h-4 w-4" /> {yieldItem.farmLocation || "Local Farm"}
+                  <MapPin className="h-4 w-4" /> {yieldItem.farmLocation || "Local Source"}
                 </div>
               </div>
             </div>
@@ -179,34 +183,13 @@ export default function YieldDetailPage() {
                 <span>Fast local delivery (within 24h)</span>
               </div>
               <div className="flex items-center gap-3">
-                <UserCheck className="h-5 w-5 text-primary" />
-                <span>Sold by <Link href="#" className="font-bold hover:underline text-primary">{yieldItem.farmName || yieldItem.farmer || "Local Farmer"}</Link></span>
+                <User className="h-5 w-5 text-primary" />
+                <span>Sold by <span className="font-bold text-primary">{yieldItem.farmerName || yieldItem.farmer || "Local Farmer"}</span></span>
               </div>
             </div>
           </div>
         </div>
       </main>
     </div>
-  );
-}
-
-function UserCheck(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <polyline points="16 11 18 13 22 9" />
-    </svg>
   );
 }

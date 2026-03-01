@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -181,8 +180,9 @@ export default function ExplorePage() {
                     category={item.category}
                     price={item.price}
                     unit={item.unit}
-                    farmer={item.farmName || "Local Farmer"}
-                    location={item.farmLocation || "Local Farm"}
+                    farmName={item.farmName}
+                    farmerName={item.farmerName}
+                    location={item.farmLocation}
                     rating={item.rating || 5.0}
                     image={item.imageUrl || ""}
                     imageHint={item.name}

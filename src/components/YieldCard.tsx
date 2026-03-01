@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -6,7 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Star, MapPin, Check } from "lucide-react";
+import { ShoppingBag, Star, MapPin, Check, Store, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,8 +15,9 @@ interface YieldCardProps {
   category: string;
   price: number;
   unit: string;
-  farmer: string;
-  location: string;
+  farmName: string;
+  farmerName: string;
+  location?: string;
   rating: number;
   image: string;
   imageHint: string;
@@ -29,7 +29,8 @@ export function YieldCard({
   category,
   price,
   unit,
-  farmer,
+  farmName,
+  farmerName,
   location,
   rating,
   image,
@@ -43,19 +44,24 @@ export function YieldCard({
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart({ id, name, price, image, unit, farmer });
+    addToCart({ 
+      id, 
+      name, 
+      price, 
+      image, 
+      unit, 
+      farmName, 
+      farmerName 
+    });
     toast({
       title: "Added to basket",
       description: `${name} has been added to your shopping basket.`,
     });
   };
 
-  // Resolve image URL handling both absolute and relative paths
   const imageSrc = (function() {
     if (!image) return `https://picsum.photos/seed/${id}/400/300`;
     if (image.startsWith('http') || image.startsWith('data:')) return image;
-    
-    // If it's a relative path from the backend
     const cleanPath = image.startsWith('/') ? image : `/${image}`;
     return `http://localhost:8080${cleanPath}`;
   })();
@@ -87,13 +93,24 @@ export function YieldCard({
             {rating}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-          <MapPin className="h-3 w-3" /> {location}
-        </p>
+        <div className="flex flex-col gap-0.5 mt-2">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <Store className="h-3 w-3 text-primary" /> 
+            <span className="font-medium">{farmName || "Local Farm"}</span>
+          </p>
+          {location && (
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 ml-4.5">
+              <MapPin className="h-2.5 w-2.5" /> {location}
+            </p>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-4 pt-2 flex-grow">
-        <p className="text-sm text-muted-foreground">Sold by <span className="font-semibold text-foreground">{farmer}</span></p>
-        <div className="mt-2 text-xl font-bold text-primary">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <User className="h-3 w-3" />
+          <span>Sold by <span className="font-semibold text-foreground">{farmerName || "Local Farmer"}</span></span>
+        </div>
+        <div className="mt-3 text-xl font-bold text-primary">
           ₹{price.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">/ {unit}</span>
         </div>
       </CardContent>
