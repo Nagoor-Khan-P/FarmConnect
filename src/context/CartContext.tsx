@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -135,7 +134,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           headers: { 'Authorization': token }
         });
         if (response.ok) {
-          // Immediately fetch the latest state from the server
           await fetchServerCart();
         }
       } catch (error) {
@@ -150,27 +148,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const item = cart.find(i => i.id === id);
     if (!item) return;
 
-    // Handle decrement/removal
-    if (delta === -1) {
-      // For authenticated users, we call the remove API
-      if (isAuthenticated) {
-        await removeFromCart(id);
-      } else {
-        // For guest users, decrease or remove locally
+    if (isAuthenticated && token) {
+      if (delta === -1) {
+        try {
+          // Call the specialized decrease endpoint
+          const response = await fetch(`http://localhost:8080/api/cart/decrease/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': token }
+          });
+          if (response.ok) {
+            await fetchServerCart();
+          }
+        } catch (error) {
+          console.error("Error decreasing quantity on server:", error);
+        }
+      } else if (delta === 1) {
+        await addToCart(item);
+      }
+    } else {
+      // Guest user local logic
+      if (delta === -1) {
         if (item.quantity === 1) {
           setCart(prev => prev.filter(i => i.id !== id));
         } else {
           setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i));
         }
-      }
-      return;
-    }
-
-    // Handle increment
-    if (delta === 1) {
-      if (isAuthenticated) {
-        await addToCart(item);
-      } else {
+      } else if (delta === 1) {
         setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
       }
     }
