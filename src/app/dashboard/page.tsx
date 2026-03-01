@@ -30,8 +30,7 @@ import {
   XCircle,
   Check,
   CheckCircle2,
-  Camera,
-  UserEdit
+  Camera
 } from "lucide-react";
 import { 
   Dialog, 
@@ -627,7 +626,7 @@ export default function DashboardPage() {
                       <CardDescription>View and manage your account information.</CardDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setIsEditProfileOpen(true)} className="gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors">
-                      <UserEdit className="h-4 w-4" /> Edit Profile
+                      <User className="h-4 w-4" /> Edit Profile
                     </Button>
                   </CardHeader>
                   <CardContent className="space-y-6">
