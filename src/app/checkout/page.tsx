@@ -51,13 +51,14 @@ type Address = {
 
 export default function CheckoutPage() {
   const { token, isAuthenticated } = useAuth();
-  const { cart, cartTotal, cartCount } = useCart();
+  const { cart, cartTotal, clearCart } = useCart();
   const { toast } = useToast();
   const router = useRouter();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   
   // Dialog States
@@ -81,7 +82,6 @@ export default function CheckoutPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        // Correctly map the 'default' field from backend response to 'isDefault'
         const mappedData = data.map((addr: any) => ({
           ...addr,
           isDefault: addr.default === true
@@ -143,6 +143,45 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleConfirmOrder = async () => {
+    if (!selectedAddressId || !token) return;
+    
+    setIsProcessingOrder(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({
+          addressId: selectedAddressId
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Order Processed",
+          description: "Your farm-fresh yields are on their way!",
+        });
+        // Clear local and server cart state
+        await clearCart();
+        router.push('/dashboard');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to process order. Please try again.");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Order Failed",
+        description: error.message || "Something went wrong while confirming your order."
+      });
+    } finally {
+      setIsProcessingOrder(false);
+    }
+  };
+
   const handleDeleteAddress = async (id: string) => {
     try {
       const response = await fetch(`http://localhost:8080/api/addresses/${id}`, {
@@ -192,7 +231,7 @@ export default function CheckoutPage() {
     setIsDialogOpen(true);
   };
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && !isProcessingOrder) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -394,16 +433,18 @@ export default function CheckoutPage() {
               <CardFooter className="flex flex-col gap-4">
                 <Button 
                   className="w-full h-12 text-lg font-bold gap-2" 
-                  disabled={!selectedAddressId}
-                  onClick={() => {
-                    toast({
-                      title: "Order Processed",
-                      description: "Your farm-fresh yields are on their way!",
-                    });
-                    router.push('/dashboard');
-                  }}
+                  disabled={!selectedAddressId || isProcessingOrder}
+                  onClick={handleConfirmOrder}
                 >
-                  Confirm Order <ChevronRight className="h-5 w-5" />
+                  {isProcessingOrder ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" /> Processing...
+                    </>
+                  ) : (
+                    <>
+                      Confirm Order <ChevronRight className="h-5 w-5" />
+                    </>
+                  )}
                 </Button>
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <ShieldCheck className="h-4 w-4 text-primary" />
