@@ -558,7 +558,7 @@ export default function DashboardPage() {
                       <CardDescription>Manage your delivery locations for faster checkout.</CardDescription>
                     </div>
                     {addresses.length > 0 && (
-                      <Button variant="outline" size="sm" onClick={() => { setEditingAddress(null); setAddressForm({ street: "", city: "", state: "", zipCode: "", country: "India" }); setIsAddressDialogOpen(true); }} className="gap-2 border-primary text-primary hover:bg-primary/10">
+                      <Button variant="outline" size="sm" onClick={() => { setEditingAddress(null); setAddressForm({ street: "", city: "", state: "", zipCode: "", country: "India" }); setIsAddressDialogOpen(true); }} className="gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors">
                         <Plus className="h-4 w-4" /> Add New
                       </Button>
                     )}

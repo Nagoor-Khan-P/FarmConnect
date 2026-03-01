@@ -261,7 +261,7 @@ export default function CheckoutPage() {
                   <MapPin className="h-5 w-5 text-primary" /> Shipping Address
                 </h2>
                 {!isLoading && addresses.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1 border-primary text-primary hover:bg-primary/10">
+                  <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1 border-primary text-primary hover:bg-primary hover:text-white transition-colors">
                     <Plus className="h-4 w-4" /> Add New
                   </Button>
                 )}
