@@ -84,7 +84,7 @@ export default function CheckoutPage() {
         // Correctly map the 'default' field from backend response to 'isDefault'
         const mappedData = data.map((addr: any) => ({
           ...addr,
-          isDefault: addr.default === true || addr.isDefault === true || addr.defaultAddress === true
+          isDefault: addr.default === true
         }));
         setAddresses(mappedData);
         
@@ -262,7 +262,7 @@ export default function CheckoutPage() {
                           <div className="flex items-center justify-between mb-2 gap-2">
                             <p className="font-bold text-lg leading-tight truncate">{addr.street}</p>
                             {addr.isDefault && (
-                              <Badge className="bg-primary/20 text-primary border-none text-[10px] uppercase font-bold shrink-0">
+                              <Badge className="bg-primary text-primary-foreground border-none text-[10px] uppercase font-bold shrink-0 rounded-sm pointer-events-none">
                                 Default
                               </Badge>
                             )}
@@ -280,7 +280,7 @@ export default function CheckoutPage() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 text-muted-foreground hover:text-primary" 
+                              className="h-8 w-8 text-muted-foreground hover:bg-primary hover:text-white transition-colors" 
                               onClick={(e) => { e.stopPropagation(); openEditDialog(addr); }}
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -295,7 +295,6 @@ export default function CheckoutPage() {
                             </Button>
                           </div>
                           
-                          {/* Only show "Set Default" if it's not already default. Button is hidden for default addresses. */}
                           {!addr.isDefault && (
                             <Button 
                               variant="outline" 
