@@ -30,7 +30,8 @@ import {
   Home,
   Image as ImageIcon,
   Upload,
-  Globe
+  Globe,
+  Calendar
 } from "lucide-react";
 import { 
   Dialog, 
@@ -67,6 +68,7 @@ import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { AiYieldDescription } from "@/components/AiYieldDescription";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 const YIELD_UNITS = [
   "kg", 
@@ -1023,9 +1025,8 @@ export default function DashboardPage() {
                           <TableHeader>
                             <TableRow>
                               <TableHead>Order ID</TableHead>
-                              <TableHead>Product</TableHead>
-                              <TableHead>Farm</TableHead>
-                              <TableHead>Quantity</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Items</TableHead>
                               <TableHead>Total</TableHead>
                               <TableHead>Status</TableHead>
                             </TableRow>
@@ -1034,10 +1035,25 @@ export default function DashboardPage() {
                             {orders.map((order) => (
                               <TableRow key={order.id}>
                                 <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
-                                <TableCell className="font-medium">{order.productName || order.product?.name}</TableCell>
-                                <TableCell>{order.farmName || order.product?.farmName || "Local Farm"}</TableCell>
-                                <TableCell>{order.quantity}</TableCell>
-                                <TableCell className="font-bold text-primary">₹{order.totalPrice}</TableCell>
+                                <TableCell className="text-xs">
+                                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                                    <Calendar className="h-3 w-3" />
+                                    {order.orderDate ? format(new Date(order.orderDate), 'MMM dd, yyyy') : "N/A"}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    {order.items?.map((item: any, idx: number) => (
+                                      <div key={idx} className="text-sm font-medium">
+                                        {item.product?.name} <span className="text-xs text-muted-foreground font-normal">x {item.quantity}</span>
+                                      </div>
+                                    ))}
+                                    {(!order.items || order.items.length === 0) && (
+                                      <span className="text-sm text-muted-foreground italic">No items found</span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-bold text-primary">₹{order.totalPrice?.toFixed(2)}</TableCell>
                                 <TableCell>
                                   <Badge variant="secondary" className="bg-primary/10 text-primary uppercase text-[10px]">
                                     {order.status || 'Processing'}
