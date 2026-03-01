@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -18,7 +19,8 @@ import {
   ShieldCheck, 
   ChevronRight,
   Globe,
-  Home
+  Home,
+  Check
 } from "lucide-react";
 import { 
   Dialog, 
@@ -34,6 +36,7 @@ import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 type Address = {
   id: string;
@@ -78,16 +81,20 @@ export default function CheckoutPage() {
       if (response.ok) {
         const data = await response.json();
         setAddresses(data);
-        const defaultAddr = data.find((a: Address) => a.isDefault);
-        if (defaultAddr) setSelectedAddressId(defaultAddr.id);
-        else if (data.length > 0) setSelectedAddressId(data[0].id);
+        
+        // Auto-select default address on first load if nothing is selected
+        if (!selectedAddressId) {
+          const defaultAddr = data.find((a: Address) => a.isDefault);
+          if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+          else if (data.length > 0) setSelectedAddressId(data[0].id);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch addresses:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, selectedAddressId]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -138,6 +145,7 @@ export default function CheckoutPage() {
       });
       if (response.ok) {
         toast({ title: "Address Removed" });
+        if (selectedAddressId === id) setSelectedAddressId(null);
         fetchAddresses();
       }
     } catch (error) {
@@ -208,7 +216,7 @@ export default function CheckoutPage() {
                   <MapPin className="h-5 w-5 text-primary" /> Shipping Address
                 </h2>
                 {!isLoading && addresses.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1 border-primary text-primary">
+                  <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1 border-primary text-primary hover:bg-primary/10">
                     <Plus className="h-4 w-4" /> Add New
                   </Button>
                 )}
@@ -230,19 +238,30 @@ export default function CheckoutPage() {
                   {addresses.map((addr) => (
                     <Card 
                       key={addr.id} 
-                      className={`relative cursor-pointer transition-all border-2 ${selectedAddressId === addr.id ? 'border-primary shadow-md bg-primary/5' : 'border-transparent hover:border-muted-foreground/30'}`}
+                      className={cn(
+                        "relative cursor-pointer transition-all border-2 overflow-hidden",
+                        selectedAddressId === addr.id 
+                          ? "border-primary shadow-md bg-primary/5" 
+                          : "border-border hover:border-primary/50"
+                      )}
                       onClick={() => setSelectedAddressId(addr.id)}
                     >
-                      <CardContent className="p-4 pt-6">
-                        {addr.isDefault && (
-                          <Badge className="absolute top-2 right-2 bg-primary/20 text-primary border-none text-[10px] uppercase font-bold">
-                            Default
-                          </Badge>
-                        )}
+                      {selectedAddressId === addr.id && (
+                        <div className="absolute top-0 right-0 bg-primary text-primary-foreground p-1 rounded-bl-lg">
+                          <Check className="h-3 w-3" />
+                        </div>
+                      )}
+                      <CardContent className="p-5">
                         <div className="space-y-1">
-                          <p className="font-bold text-lg">{addr.street}</p>
-                          <p className="text-sm text-muted-foreground">{addr.city}, {addr.state}</p>
-                          <p className="text-sm text-muted-foreground">{addr.zipCode}</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-bold text-lg leading-tight">{addr.street}</p>
+                            {addr.isDefault && (
+                              <Badge className="bg-primary/20 text-primary border-none text-[10px] uppercase font-bold shrink-0">
+                                Default
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
                           <p className="text-xs font-bold text-primary flex items-center gap-1 mt-2">
                             <Globe className="h-3 w-3" /> {addr.country}
                           </p>
@@ -251,15 +270,30 @@ export default function CheckoutPage() {
                       <Separator />
                       <CardFooter className="p-2 flex justify-between bg-muted/20">
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={(e) => { e.stopPropagation(); openEditDialog(addr); }}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-primary" 
+                            onClick={(e) => { e.stopPropagation(); openEditDialog(addr); }}
+                          >
                             <Pencil className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/60" onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10" 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}
+                          >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                         {!addr.isDefault && (
-                          <Button variant="ghost" size="sm" className="h-8 text-xs font-bold" onClick={(e) => { e.stopPropagation(); handleSetDefault(addr.id); }}>
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="h-8 text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors"
+                            onClick={(e) => { e.stopPropagation(); handleSetDefault(addr.id); }}
+                          >
                             Set Default
                           </Button>
                         )}
@@ -293,13 +327,13 @@ export default function CheckoutPage() {
 
           {/* Order Summary Column */}
           <div className="space-y-6">
-            <Card className="sticky top-24 border-t-4 border-t-primary">
+            <Card className="sticky top-24 border-t-4 border-t-primary shadow-lg">
               <CardHeader>
                 <CardTitle>Order Review</CardTitle>
                 <CardDescription>Items in your basket</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2">
+                <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2 scrollbar-thin">
                   {cart.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <div className="space-y-0.5">
@@ -314,11 +348,16 @@ export default function CheckoutPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>₹{cartTotal.toFixed(2)}</span>
+                    <span className="font-medium">₹{cartTotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between items-start text-sm">
                     <span className="text-muted-foreground">Delivery</span>
-                    <span className="text-primary font-bold uppercase text-[10px] tracking-widest mt-0.5">Calculated based on address</span>
+                    <span className={cn(
+                      "text-[10px] font-bold uppercase tracking-widest text-right",
+                      selectedAddressId ? "text-primary" : "text-destructive"
+                    )}>
+                      {selectedAddressId ? "FREE" : "Select address to calculate"}
+                    </span>
                   </div>
                 </div>
                 <Separator />
@@ -328,7 +367,17 @@ export default function CheckoutPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full h-12 text-lg font-bold gap-2" disabled={!selectedAddressId}>
+                <Button 
+                  className="w-full h-12 text-lg font-bold gap-2" 
+                  disabled={!selectedAddressId}
+                  onClick={() => {
+                    toast({
+                      title: "Order Processed",
+                      description: "Your farm-fresh yields are on their way!",
+                    });
+                    router.push('/dashboard');
+                  }}
+                >
                   Confirm Order <ChevronRight className="h-5 w-5" />
                 </Button>
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -358,6 +407,7 @@ export default function CheckoutPage() {
                     <Input 
                       id="street" 
                       className="pl-9"
+                      placeholder="e.g. 123 Farm Lane"
                       required 
                       value={addressForm.street}
                       onChange={(e) => setAddressForm({...addressForm, street: e.target.value})}
@@ -367,17 +417,17 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
-                    <Input id="city" required value={addressForm.city} onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} />
+                    <Input id="city" placeholder="City" required value={addressForm.city} onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State</Label>
-                    <Input id="state" required value={addressForm.state} onChange={(e) => setAddressForm({...addressForm, state: e.target.value})} />
+                    <Input id="state" placeholder="State" required value={addressForm.state} onChange={(e) => setAddressForm({...addressForm, state: e.target.value})} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="zipCode">Zip Code</Label>
-                    <Input id="zipCode" required value={addressForm.zipCode} onChange={(e) => setAddressForm({...addressForm, zipCode: e.target.value})} />
+                    <Input id="zipCode" placeholder="Zip Code" required value={addressForm.zipCode} onChange={(e) => setAddressForm({...addressForm, zipCode: e.target.value})} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="country">Country</Label>
