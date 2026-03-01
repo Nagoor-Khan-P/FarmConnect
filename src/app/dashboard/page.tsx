@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -69,7 +68,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
-  const { user: authUser, token, logout, isAuthenticated } = useAuth();
+  const { user: authUser, token, logout, isAuthenticated, updateUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -149,13 +148,20 @@ export default function DashboardPage() {
           lastName: data.lastName || "",
           email: data.email || ""
         });
+        // Sync with AuthContext to update Navbar image
+        updateUser({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          profileImage: data.profileImage
+        });
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
     } finally {
       setIsProfileLoading(false);
     }
-  }, [token]);
+  }, [token, updateUser]);
 
   const fetchAddresses = useCallback(async () => {
     if (!token) return;
@@ -287,6 +293,13 @@ export default function DashboardPage() {
       if (response.ok) {
         const updatedData = await response.json();
         setProfile(updatedData);
+        // Sync with AuthContext to update Navbar image
+        updateUser({
+          firstName: updatedData.firstName,
+          lastName: updatedData.lastName,
+          email: updatedData.email,
+          profileImage: updatedData.profileImage
+        });
         toast({ title: "Profile Updated", description: "Your account details have been saved successfully." });
         setIsEditProfileOpen(false);
         setProfileImageFile(null);
@@ -418,9 +431,9 @@ export default function DashboardPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <div className="relative h-24 w-24 rounded-full bg-primary/20 mx-auto mb-4 border-2 border-primary/20 overflow-hidden">
-                  {(profile?.imageUrl || profile?.image) ? (
+                  {profile?.profileImage ? (
                     <Image 
-                      src={resolveImageUrl(profile.imageUrl || profile.image)!} 
+                      src={resolveImageUrl(profile.profileImage)!} 
                       alt={profile.username} 
                       fill 
                       className="object-cover" 
@@ -760,9 +773,9 @@ export default function DashboardPage() {
                         fill 
                         className="object-cover" 
                       />
-                    ) : (profile?.imageUrl || profile?.image) ? (
+                    ) : (profile?.profileImage) ? (
                       <Image 
-                        src={resolveImageUrl(profile.imageUrl || profile.image)!} 
+                        src={resolveImageUrl(profile.profileImage)!} 
                         alt="Current" 
                         fill 
                         className="object-cover" 

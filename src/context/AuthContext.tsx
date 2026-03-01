@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -11,12 +10,14 @@ export type User = {
   lastName: string;
   email: string;
   roles: string[];
+  profileImage?: string;
 };
 
 type AuthContextType = {
   user: User | null;
   token: string | null;
   login: (userData: any) => void;
+  updateUser: (userData: Partial<User>) => void;
   logout: () => void;
   isAuthenticated: boolean;
 };
@@ -56,6 +57,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('farmconnect_user', JSON.stringify(userData));
   };
 
+  const updateUser = (userData: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return null;
+      const updated = { ...prev, ...userData };
+      localStorage.setItem('farmconnect_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -67,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!token;
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, login, updateUser, logout, isAuthenticated }}>
       {mounted ? children : null}
     </AuthContext.Provider>
   );

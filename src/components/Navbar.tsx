@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { Leaf, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Bell, Trash2, Clock, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -40,6 +41,13 @@ export function Navbar() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const resolveImageUrl = (path: string) => {
+    if (!path) return null;
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `http://localhost:8080${cleanPath}`;
   };
 
   const isFarmer = user?.roles.includes('ROLE_FARMER');
@@ -157,11 +165,23 @@ export function Navbar() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className={cn("rounded-full shrink-0", (pathname.startsWith("/dashboard") || isAuthenticated) && "border-primary")}>
+              <Button variant="outline" size="icon" className={cn("rounded-full shrink-0 overflow-hidden", (pathname.startsWith("/dashboard") || isAuthenticated) && "border-primary")}>
                 {isAuthenticated && user ? (
-                  <div className="bg-primary/10 w-full h-full flex items-center justify-center rounded-full text-xs font-bold text-primary">
-                    {user.firstName[0]}{user.lastName[0]}
-                  </div>
+                  user.profileImage ? (
+                    <div className="relative w-full h-full">
+                      <Image 
+                        src={resolveImageUrl(user.profileImage)!} 
+                        alt={user.username} 
+                        fill 
+                        className="object-cover" 
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-primary/10 w-full h-full flex items-center justify-center text-xs font-bold text-primary">
+                      {user.firstName[0]}{user.lastName[0]}
+                    </div>
+                  )
                 ) : (
                   <User className={cn("h-5 w-5", pathname.startsWith("/dashboard") && "text-primary")} />
                 )}
