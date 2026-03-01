@@ -111,9 +111,13 @@ export default function DashboardPage() {
   const [isProductsLoading, setIsProductsLoading] = useState(false);
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   
-  // Sales Management State
+  // Sales Management State (for Farmers)
   const [sales, setSales] = useState<any[]>([]);
   const [isSalesLoading, setIsSalesLoading] = useState(false);
+
+  // Orders Management State (for Buyers)
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isOrdersLoading, setIsOrdersLoading] = useState(false);
 
   // Dialog States
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -206,6 +210,24 @@ export default function DashboardPage() {
     }
   }, [token]);
 
+  const fetchMyOrders = useCallback(async () => {
+    if (!token) return;
+    setIsOrdersLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/orders/my-orders', {
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setIsOrdersLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/auth/login?redirect=/dashboard');
@@ -218,8 +240,9 @@ export default function DashboardPage() {
       fetchMySales();
     } else {
       setIsLoadingFarms(false);
+      fetchMyOrders();
     }
-  }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchMySales, router]);
+  }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchMySales, fetchMyOrders, router]);
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, { farm: any; products: any[] }> = {};
@@ -968,6 +991,66 @@ export default function DashboardPage() {
                     </Card>
                   </TabsContent>
                 </>
+              )}
+
+              {!isFarmer && (
+                <TabsContent value="orders">
+                  <Card className="shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle>My Purchase History</CardTitle>
+                        <CardDescription>Track your farm-to-table deliveries.</CardDescription>
+                      </div>
+                      <Button variant="outline" size="icon" onClick={fetchMyOrders} disabled={isOrdersLoading}>
+                        <RefreshCcw className={`h-4 w-4 ${isOrdersLoading ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      {isOrdersLoading ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                      ) : orders.length === 0 ? (
+                        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                          <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">You haven't placed any orders yet.</p>
+                          <Button asChild className="mt-4">
+                            <Link href="/explore">Start Shopping</Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Order ID</TableHead>
+                              <TableHead>Product</TableHead>
+                              <TableHead>Farm</TableHead>
+                              <TableHead>Quantity</TableHead>
+                              <TableHead>Total</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {orders.map((order) => (
+                              <TableRow key={order.id}>
+                                <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
+                                <TableCell className="font-medium">{order.productName || order.product?.name}</TableCell>
+                                <TableCell>{order.farmName || order.product?.farmName || "Local Farm"}</TableCell>
+                                <TableCell>{order.quantity}</TableCell>
+                                <TableCell className="font-bold text-primary">₹{order.totalPrice}</TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="bg-primary/10 text-primary uppercase text-[10px]">
+                                    {order.status || 'Processing'}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
               )}
 
               <TabsContent value="profile">
