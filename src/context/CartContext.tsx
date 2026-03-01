@@ -135,7 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           headers: { 'Authorization': token }
         });
         if (response.ok) {
-          // Re-fetch the entire cart to ensure local state matches server calculations
+          // Immediately fetch the latest state from the server
           await fetchServerCart();
         }
       } catch (error) {
@@ -150,47 +150,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const item = cart.find(i => i.id === id);
     if (!item) return;
 
-    if (delta === -1 && item.quantity === 1) {
-      await removeFromCart(id);
+    // Handle decrement/removal
+    if (delta === -1) {
+      // For authenticated users, we call the remove API
+      if (isAuthenticated) {
+        await removeFromCart(id);
+      } else {
+        // For guest users, decrease or remove locally
+        if (item.quantity === 1) {
+          setCart(prev => prev.filter(i => i.id !== id));
+        } else {
+          setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i));
+        }
+      }
       return;
     }
 
-    if (isAuthenticated && token) {
-      try {
-        // Optimistic UI Update for immediate feedback
-        setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
-        
-        if (delta === 1) {
-          const response = await fetch('http://localhost:8080/api/cart/add', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token
-            },
-            body: JSON.stringify({
-              productId: item.productId,
-              quantity: 1
-            })
-          });
-          if (!response.ok) {
-            await fetchServerCart(); // Revert on failure
-          } else {
-            // Optional: Re-fetch if backend returns computed values (like subtotal) you need
-            await fetchServerCart();
-          }
-        } else {
-          // If your backend doesn't have a decrement endpoint, you might need to handle this differently.
-          // For now, we'll refresh to ensure consistency if a decrement occurred on server via other means.
-          await fetchServerCart();
-        }
-      } catch (error) {
-        console.error("Error updating quantity:", error);
-        await fetchServerCart(); // Revert on error
+    // Handle increment
+    if (delta === 1) {
+      if (isAuthenticated) {
+        await addToCart(item);
+      } else {
+        setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
       }
-    } else {
-      setCart((prev) =>
-        prev.map((i) => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i)
-      );
     }
   };
 
