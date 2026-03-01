@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -284,9 +285,11 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
+        const updatedData = await response.json();
+        setProfile(updatedData);
         toast({ title: "Profile Updated", description: "Your account details have been saved successfully." });
         setIsEditProfileOpen(false);
-        fetchProfile();
+        setProfileImageFile(null);
       } else {
         throw new Error("Failed to update profile");
       }
@@ -415,9 +418,9 @@ export default function DashboardPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <div className="relative h-24 w-24 rounded-full bg-primary/20 mx-auto mb-4 border-2 border-primary/20 overflow-hidden">
-                  {profile?.imageUrl ? (
+                  {(profile?.imageUrl || profile?.image) ? (
                     <Image 
-                      src={resolveImageUrl(profile.imageUrl)!} 
+                      src={resolveImageUrl(profile.imageUrl || profile.image)!} 
                       alt={profile.username} 
                       fill 
                       className="object-cover" 
@@ -757,9 +760,9 @@ export default function DashboardPage() {
                         fill 
                         className="object-cover" 
                       />
-                    ) : profile?.imageUrl ? (
+                    ) : (profile?.imageUrl || profile?.image) ? (
                       <Image 
-                        src={resolveImageUrl(profile.imageUrl)!} 
+                        src={resolveImageUrl(profile.imageUrl || profile.image)!} 
                         alt="Current" 
                         fill 
                         className="object-cover" 
@@ -953,7 +956,7 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
             <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
             <TableCell className="text-xs">
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Calendar className="h-3 w-3" />
+                <Clock className="h-3 w-3" />
                 {order.orderDate ? format(new Date(order.orderDate), 'MMM dd, yyyy') : "N/A"}
               </div>
             </TableCell>
