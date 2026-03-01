@@ -142,7 +142,7 @@ export default function FarmerRegisterPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground hover:text-primary transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
