@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -298,7 +297,7 @@ export default function DashboardPage() {
     if (!orderToCancel || !token) return;
     try {
       const response = await fetch(`http://localhost:8080/api/orders/${orderToCancel.id}/cancel`, {
-        method: 'DELETE',
+        method: 'PUT',
         headers: { 'Authorization': token }
       });
       if (response.ok) {
