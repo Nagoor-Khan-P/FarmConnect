@@ -43,7 +43,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
-        // Map backend CartResponse items based on the updated DTO
         const items = data.items.map((item: any) => ({
           id: item.id, // backend cart item UUID
           productId: item.productId,
@@ -64,7 +63,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [token]);
 
-  // Load cart on mount or auth change
   useEffect(() => {
     if (isAuthenticated) {
       fetchServerCart();
@@ -80,7 +78,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, fetchServerCart]);
 
-  // Save guest cart to localStorage
   useEffect(() => {
     if (!isAuthenticated) {
       localStorage.setItem('farmconnect_cart', JSON.stringify(cart));
@@ -97,12 +94,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             'Authorization': token
           },
           body: JSON.stringify({
-            productId: product.id,
+            productId: product.productId || product.id,
             quantity: 1
           })
         });
         if (response.ok) {
-          fetchServerCart(); // Refresh from server to get correct IDs
+          await fetchServerCart();
         }
       } catch (error) {
         console.error("Error adding to server cart:", error);
@@ -153,17 +150,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!item) return;
 
     if (delta === -1 && item.quantity === 1) {
-      removeFromCart(id);
+      await removeFromCart(id);
       return;
     }
 
     if (isAuthenticated && token) {
       try {
-        // Optimistic update
+        // Optimistic UI Update
         setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
         
         if (delta === 1) {
-          await fetch('http://localhost:8080/api/cart/add', {
+          const response = await fetch('http://localhost:8080/api/cart/add', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -174,23 +171,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               quantity: 1
             })
           });
+          if (!response.ok) {
+            await fetchServerCart(); // Revert on failure
+          }
         } else {
-          // If the backend lacks a direct "decrement" endpoint, refresh is safer
-          fetchServerCart();
+          // Note: If backend lacks a decrement endpoint, we'll keep the local state for now
+          // and only hard-sync if really needed to avoid overwriting optimistic UI with old data
+          // await fetchServerCart(); 
         }
       } catch (error) {
         console.error("Error updating quantity:", error);
-        fetchServerCart(); // Revert on error
+        await fetchServerCart(); // Revert on error
       }
     } else {
       setCart((prev) =>
-        prev.map((i) => {
-          if (i.id === id) {
-            const newQty = Math.max(1, i.quantity + delta);
-            return { ...i, quantity: newQty };
-          }
-          return i;
-        })
+        prev.map((i) => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i)
       );
     }
   };
@@ -198,11 +193,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = async () => {
     if (isAuthenticated && token) {
       try {
-        await fetch('http://localhost:8080/api/cart/clear', {
+        const response = await fetch('http://localhost:8080/api/cart/clear', {
           method: 'DELETE',
           headers: { 'Authorization': token }
         });
-        setCart([]);
+        if (response.ok) {
+          setCart([]);
+        }
       } catch (error) {
         console.error("Error clearing server cart:", error);
       }
