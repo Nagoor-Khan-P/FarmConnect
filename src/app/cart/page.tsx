@@ -4,19 +4,29 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, ShieldCheck } from "lucide-react";
+import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, cartTotal, cartCount } = useCart();
+  const { cart, removeFromCart, updateQuantity, cartTotal, cartCount, isLoading } = useCart();
+  const { isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Helper to resolve backend image paths
+  const resolveImageUrl = (path: string) => {
+    if (!path) return "https://picsum.photos/seed/default/400/300";
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `http://localhost:8080${cleanPath}`;
+  };
 
   if (!mounted) {
     return (
@@ -31,9 +41,12 @@ export default function CartPage() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <ShoppingBag className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold font-headline">Your Shopping Basket</h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <ShoppingBag className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold font-headline">Your Shopping Basket</h1>
+          </div>
+          {isLoading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
         </div>
 
         {cart.length === 0 ? (
@@ -57,10 +70,11 @@ export default function CartPage() {
                   <div className="flex flex-col sm:flex-row">
                     <div className="relative w-full sm:w-32 h-32">
                       <Image 
-                        src={item.image} 
+                        src={resolveImageUrl(item.image)} 
                         alt={item.name} 
                         fill 
                         className="object-cover"
+                        unoptimized
                       />
                     </div>
                     <div className="flex-1 p-4 flex flex-col justify-between">
@@ -138,15 +152,19 @@ export default function CartPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
                   <Button className="w-full h-12 text-lg font-bold" asChild>
-                    <Link href="/auth/login?redirect=checkout">Secure Checkout</Link>
+                    <Link href={isAuthenticated ? "/checkout" : "/auth/login?redirect=checkout"}>
+                      Secure Checkout
+                    </Link>
                   </Button>
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <span>Safe & Secure Guest Shopping</span>
+                    <span>{isAuthenticated ? "Secure Encrypted Transaction" : "Safe & Secure Guest Shopping"}</span>
                   </div>
-                  <p className="text-xs text-center text-muted-foreground px-2">
-                    Sign in is required only at the final step to provide your delivery details and process payment.
-                  </p>
+                  {!isAuthenticated && (
+                    <p className="text-xs text-center text-muted-foreground px-2">
+                      Sign in is required only at the final step to provide your delivery details and process payment.
+                    </p>
+                  )}
                 </CardFooter>
               </Card>
             </div>
