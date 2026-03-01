@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -208,9 +207,11 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-primary" /> Shipping Address
                 </h2>
-                <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1 border-primary text-primary">
-                  <Plus className="h-4 w-4" /> Add New
-                </Button>
+                {!isLoading && addresses.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1 border-primary text-primary">
+                    <Plus className="h-4 w-4" /> Add New
+                  </Button>
+                )}
               </div>
 
               {isLoading ? (
