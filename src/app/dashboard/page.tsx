@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -28,7 +29,8 @@ import {
   Box,
   Home,
   Image as ImageIcon,
-  Upload
+  Upload,
+  Globe
 } from "lucide-react";
 import { 
   Dialog, 
@@ -99,7 +101,8 @@ export default function DashboardPage() {
       street: "",
       city: "",
       state: "",
-      zipCode: ""
+      zipCode: "",
+      country: "India"
     }
   });
 
@@ -279,7 +282,7 @@ export default function DashboardPage() {
         setFarmFormData({
           name: "",
           description: "",
-          address: { street: "", city: "", state: "", zipCode: "" }
+          address: { street: "", city: "", state: "", zipCode: "", country: "India" }
         });
         toast({
           title: editingFarm ? "Farm Updated" : "Farm Registered!",
@@ -494,7 +497,7 @@ export default function DashboardPage() {
     setFarmFormData({
       name: "",
       description: "",
-      address: { street: "", city: "", state: "", zipCode: "" }
+      address: { street: "", city: "", state: "", zipCode: "", country: "India" }
     });
     setIsFarmDialogOpen(true);
   };
@@ -505,7 +508,7 @@ export default function DashboardPage() {
     setFarmFormData({
       name: farm.name,
       description: farm.description,
-      address: farm.address || { street: "", city: "", state: "", zipCode: "" }
+      address: farm.address || { street: "", city: "", state: "", zipCode: "", country: "India" }
     });
     setIsFarmDialogOpen(true);
   };
@@ -1072,14 +1075,29 @@ export default function DashboardPage() {
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="zip">Zip Code</Label>
-                        <Input 
-                          id="zip" 
-                          required 
-                          value={farmFormData.address.zipCode}
-                          onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, zipCode: e.target.value}})}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="zip">Zip Code</Label>
+                          <Input 
+                            id="zip" 
+                            required 
+                            value={farmFormData.address.zipCode}
+                            onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, zipCode: e.target.value}})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="farm-country">Country</Label>
+                          <div className="relative">
+                            <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              id="farm-country" 
+                              className="pl-9"
+                              required 
+                              value={farmFormData.address.country}
+                              onChange={(e) => setFarmFormData({...farmFormData, address: {...farmFormData.address, country: e.target.value}})}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
