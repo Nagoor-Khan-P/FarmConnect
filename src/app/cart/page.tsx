@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, ShieldCheck, Loader2, Store, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart, type CartItem } from "@/context/CartContext";
@@ -81,9 +81,22 @@ export default function CartPage() {
                     </div>
                     <div className="flex-1 p-4 flex flex-col justify-between">
                       <div className="flex justify-between items-start">
-                        <div>
+                        <div className="space-y-1">
                           <h3 className="font-bold text-lg text-primary">{item.name}</h3>
-                          <p className="text-sm text-muted-foreground">Farmer: {item.farmer}</p>
+                          <div className="flex flex-col gap-0.5">
+                            {item.farmName && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Store className="h-3 w-3 text-primary" />
+                                <span className="font-medium">Farm: {item.farmName}</span>
+                              </div>
+                            )}
+                            {item.farmerName && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <User className="h-3 w-3 text-primary" />
+                                <span>Farmer: {item.farmerName}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <Button 
                           variant="ghost" 
@@ -162,11 +175,6 @@ export default function CartPage() {
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <span>{isAuthenticated ? "Secure Encrypted Transaction" : "Safe & Secure Guest Shopping"}</span>
                   </div>
-                  {!isAuthenticated && (
-                    <p className="text-xs text-center text-muted-foreground px-2">
-                      Sign in is required only at the final step to provide your delivery details and process payment.
-                    </p>
-                  )}
                 </CardFooter>
               </Card>
             </div>

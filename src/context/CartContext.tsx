@@ -12,7 +12,8 @@ export type CartItem = {
   image: string;
   quantity: number;
   unit: string;
-  farmer: string;
+  farmName: string;
+  farmerName: string;
 };
 
 type CartContextType = {
@@ -42,15 +43,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
-        // Map backend CartResponse items based on the new updated DTO
+        // Map backend CartResponse items based on the updated DTO
         const items = data.items.map((item: any) => ({
           id: item.id, // backend cart item UUID
           productId: item.productId,
           name: item.productName,
           price: item.price,
           quantity: item.quantity,
-          unit: item.unit || 'kg', // Fallback if unit is missing in DTO
-          farmer: item.farmName || item.farmerName || 'Local Farmer',
+          unit: item.unit || 'kg',
+          farmName: item.farmName || '',
+          farmerName: item.farmerName || '',
           image: item.imageUrl || ''
         }));
         setCart(items);
@@ -120,7 +122,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           price: product.price, 
           image: product.image || product.imageUrl || '', 
           unit: product.unit || 'kg', 
-          farmer: product.farmer || product.farmName || 'Local Farmer',
+          farmName: product.farmName || 'Local Farm',
+          farmerName: product.farmerName || product.farmer || 'Local Farmer',
           quantity: 1 
         }];
       });
@@ -159,8 +162,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Optimistic update
         setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
         
-        // In the backend, adding with quantity 1 increments or we might need a specific update qty endpoint.
-        // Assuming /add adds to existing quantity.
         if (delta === 1) {
           await fetch('http://localhost:8080/api/cart/add', {
             method: 'POST',
@@ -174,8 +175,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             })
           });
         } else {
-          // If the backend lacks a direct "decrement" endpoint, we'd typically need one.
-          // For now, refreshing is safer if we can't decrement.
+          // If the backend lacks a direct "decrement" endpoint, refresh is safer
           fetchServerCart();
         }
       } catch (error) {
