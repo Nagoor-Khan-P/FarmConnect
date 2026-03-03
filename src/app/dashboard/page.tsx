@@ -29,10 +29,11 @@ import {
   Clock,
   History,
   XCircle,
-  Check,
   CheckCircle2,
   Camera,
-  Truck
+  Truck,
+  PlusCircle,
+  MinusCircle
 } from "lucide-react";
 import { 
   Dialog, 
@@ -60,7 +61,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuth, type User as AuthUser } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
@@ -494,7 +495,18 @@ export default function DashboardPage() {
     setIsProductSaving(true);
     try {
       const formData = new FormData();
-      const productBlob = new Blob([JSON.stringify(productFormData)], { type: 'application/json' });
+      // Ensure specific fields are mapped for backend expectation
+      const productPayload = {
+        name: productFormData.name,
+        description: productFormData.description,
+        price: productFormData.price,
+        category: productFormData.category,
+        unit: productFormData.unit,
+        quantity: productFormData.quantity,
+        farmId: productFormData.farmId
+      };
+      
+      const productBlob = new Blob([JSON.stringify(productPayload)], { type: 'application/json' });
       formData.append('product', productBlob);
       if (productImageFile) {
         formData.append('image', productImageFile);
@@ -519,6 +531,27 @@ export default function DashboardPage() {
       toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {
       setIsProductSaving(false);
+    }
+  };
+
+  const handleUpdateStock = async (productId: string, currentStock: number, delta: number) => {
+    if (!token) return;
+    const newStock = Math.max(0, currentStock + delta);
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${productId}/stock`, {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newStock)
+      });
+      if (response.ok) {
+        toast({ title: "Stock Updated", description: `New stock level: ${newStock}` });
+        fetchMyProducts();
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
     }
   };
 
@@ -803,7 +836,7 @@ export default function DashboardPage() {
                                 <TableHead className="w-[80px]">Image</TableHead>
                                 <TableHead>Yield</TableHead>
                                 <TableHead>Price</TableHead>
-                                <TableHead>Stock</TableHead>
+                                <TableHead>Stock Management</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -830,9 +863,27 @@ export default function DashboardPage() {
                                   <TableCell className="font-medium">{p.name}</TableCell>
                                   <TableCell>₹{p.price}/{p.unit}</TableCell>
                                   <TableCell>
-                                    <Badge variant={p.quantity < 5 ? "destructive" : "secondary"}>
-                                      {p.quantity} {p.unit}
-                                    </Badge>
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-7 w-7 text-destructive"
+                                        onClick={() => handleUpdateStock(p.id, p.quantity, -1)}
+                                      >
+                                        <MinusCircle className="h-4 w-4" />
+                                      </Button>
+                                      <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="min-w-[60px] justify-center">
+                                        {p.quantity} {p.unit}
+                                      </Badge>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-7 w-7 text-primary"
+                                        onClick={() => handleUpdateStock(p.id, p.quantity, 1)}
+                                      >
+                                        <PlusCircle className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
