@@ -921,11 +921,11 @@ export default function DashboardPage() {
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
-                                      <TableHead className="w-[80px]">Image</TableHead>
+                                      <TableHead>Image</TableHead>
                                       <TableHead>Yield</TableHead>
                                       <TableHead>Price</TableHead>
                                       <TableHead>Stock Level</TableHead>
-                                      <TableHead className="text-right w-[140px] pr-4">Actions</TableHead>
+                                      <TableHead className="w-[140px]">Actions</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
@@ -955,8 +955,8 @@ export default function DashboardPage() {
                                             {p.quantity} {p.unit}
                                           </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right pr-4">
-                                          <div className="flex justify-end items-center gap-1">
+                                        <TableCell>
+                                          <div className="flex justify-start items-center gap-1">
                                             <Button 
                                               variant="ghost" 
                                               size="icon" 
@@ -979,10 +979,10 @@ export default function DashboardPage() {
                                               variant="ghost" 
                                               size="icon" 
                                               title="Delete Product" 
-                                              className="text-destructive hover:bg-destructive/10 h-8 w-8" 
+                                              className="h-8 w-8 hover:bg-destructive/10" 
                                               onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}
                                             >
-                                              <Trash2 className="h-4 w-4" />
+                                              <Trash2 className="h-4 w-4 text-destructive" />
                                             </Button>
                                           </div>
                                         </TableCell>
@@ -1469,7 +1469,7 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
           <TableHead>Items</TableHead>
           <TableHead>Total</TableHead>
           <TableHead>Status</TableHead>
-          {onCancel && <TableHead className="text-right">Actions</TableHead>}
+          <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -1497,8 +1497,8 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
                 {order.status}
               </Badge>
             </TableCell>
-            {onCancel && (
-              <TableCell className="text-right">
+            <TableCell>
+              {onCancel && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -1507,8 +1507,8 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-              </TableCell>
-            )}
+              )}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -1526,7 +1526,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
           <TableHead>Quantity</TableHead>
           <TableHead>Total Price</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="text-right">Action</TableHead>
+          <TableHead>Action</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -1568,7 +1568,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
                 {item.status}
               </Badge>
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell>
               {item.status === 'PENDING' ? (
                 <Button 
                   size="sm" 
@@ -1578,7 +1578,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
                   <Package className="h-3 w-3" /> Mark as Shipped
                 </Button>
               ) : (
-                <div className="flex items-center justify-end gap-1 text-green-600 text-xs font-bold uppercase">
+                <div className="flex items-center gap-1 text-green-600 text-xs font-bold uppercase">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Fulfilled
                 </div>
               )}
