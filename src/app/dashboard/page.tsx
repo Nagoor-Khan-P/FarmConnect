@@ -639,7 +639,15 @@ export default function DashboardPage() {
                             <CardHeader className="flex flex-row items-start justify-between bg-primary/5">
                               <div className="flex gap-4">
                                 <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
-                                  {farm.image && <Image src={resolveImageUrl(farm.image)!} alt={farm.name} fill className="object-cover" unoptimized />}
+                                  {(farm.imageUrl || farm.image) && (
+                                    <Image 
+                                      src={resolveImageUrl(farm.imageUrl || farm.image)!} 
+                                      alt={farm.name} 
+                                      fill 
+                                      className="object-cover" 
+                                      unoptimized 
+                                    />
+                                  )}
                                 </div>
                                 <div>
                                   <CardTitle className="text-2xl">{farm.name}</CardTitle>
