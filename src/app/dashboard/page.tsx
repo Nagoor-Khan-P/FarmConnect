@@ -925,7 +925,7 @@ export default function DashboardPage() {
                                       <TableHead>Yield</TableHead>
                                       <TableHead>Price</TableHead>
                                       <TableHead>Stock Level</TableHead>
-                                      <TableHead className="text-right">Actions</TableHead>
+                                      <TableHead className="text-right w-[140px] pr-4">Actions</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
@@ -955,15 +955,33 @@ export default function DashboardPage() {
                                             {p.quantity} {p.unit}
                                           </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                          <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" title="Update Stock" onClick={() => openStockUpdate(p)} className="text-primary hover:bg-primary/10">
-                                              <Package className="h-4 w-4" />
+                                        <TableCell className="text-right pr-4">
+                                          <div className="flex justify-end items-center gap-1">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="icon" 
+                                              title="Update Stock" 
+                                              onClick={() => openStockUpdate(p)} 
+                                              className="hover:bg-primary/10 group h-8 w-8"
+                                            >
+                                              <Package className="h-4 w-4 text-primary group-hover:text-primary transition-colors" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" title="Edit Product" onClick={() => openEditProduct(p)}>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="icon" 
+                                              title="Edit Product" 
+                                              onClick={() => openEditProduct(p)}
+                                              className="h-8 w-8"
+                                            >
                                               <Pencil className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" title="Delete Product" className="text-destructive hover:bg-destructive/10" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="icon" 
+                                              title="Delete Product" 
+                                              className="text-destructive hover:bg-destructive/10 h-8 w-8" 
+                                              onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}
+                                            >
                                               <Trash2 className="h-4 w-4" />
                                             </Button>
                                           </div>
@@ -1082,7 +1100,7 @@ export default function DashboardPage() {
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
-                                  className="h-8 w-8 text-destructive/60 hover:bg-destructive hover:text-white transition-colors"
+                                  className="h-8 w-8 text-destructive/60 hover:bg-destructive hover:bg-white transition-colors"
                                   onClick={() => handleDeleteAddress(addr.id)}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1279,7 +1297,7 @@ export default function DashboardPage() {
             <AlertDialogDescription>Are you sure you want to remove this yield from your inventory? This action cannot be undone.</AlertDialogDescription>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive">Delete</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive text-white">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -1290,7 +1308,7 @@ export default function DashboardPage() {
             <AlertDialogDescription>Are you sure you want to remove this farm? All products associated with this farm may also be affected. This action cannot be undone.</AlertDialogDescription>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteFarm} className="bg-destructive">Delete Farm</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteFarm} className="bg-destructive text-white">Delete Farm</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -1303,7 +1321,7 @@ export default function DashboardPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Keep Order</AlertDialogCancel>
-              <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive">Confirm Cancellation</AlertDialogAction>
+              <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive text-white">Confirm Cancellation</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
