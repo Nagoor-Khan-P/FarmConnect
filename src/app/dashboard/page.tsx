@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -49,7 +48,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -1014,7 +1012,7 @@ export default function DashboardPage() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
-                                  onClick={() => handleSetDefaultAddress(id)}
+                                  onClick={() => handleSetDefaultAddress(addr.id)}
                                 >
                                   Set Default
                                 </Button>
