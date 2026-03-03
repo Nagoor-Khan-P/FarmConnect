@@ -33,7 +33,8 @@ import {
   Camera,
   Truck,
   PlusCircle,
-  MinusCircle
+  MinusCircle,
+  Check
 } from "lucide-react";
 import { 
   Dialog, 
@@ -48,7 +49,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
+  AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -495,7 +496,6 @@ export default function DashboardPage() {
     setIsProductSaving(true);
     try {
       const formData = new FormData();
-      // Ensure specific fields are mapped for backend expectation
       const productPayload = {
         name: productFormData.name,
         description: productFormData.description,
@@ -534,9 +534,8 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUpdateStock = async (productId: string, currentStock: number, delta: number) => {
+  const handleUpdateStock = async (productId: string, newStock: number) => {
     if (!token) return;
-    const newStock = Math.max(0, currentStock + delta);
     try {
       const response = await fetch(`http://localhost:8080/api/products/${productId}/stock`, {
         method: 'PATCH',
@@ -836,7 +835,7 @@ export default function DashboardPage() {
                                 <TableHead className="w-[80px]">Image</TableHead>
                                 <TableHead>Yield</TableHead>
                                 <TableHead>Price</TableHead>
-                                <TableHead>Stock Management</TableHead>
+                                <TableHead>Stock (Direct Update)</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -863,26 +862,28 @@ export default function DashboardPage() {
                                   <TableCell className="font-medium">{p.name}</TableCell>
                                   <TableCell>₹{p.price}/{p.unit}</TableCell>
                                   <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-7 w-7 text-destructive"
-                                        onClick={() => handleUpdateStock(p.id, p.quantity, -1)}
-                                      >
-                                        <MinusCircle className="h-4 w-4" />
-                                      </Button>
-                                      <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="min-w-[60px] justify-center">
-                                        {p.quantity} {p.unit}
-                                      </Badge>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-7 w-7 text-primary"
-                                        onClick={() => handleUpdateStock(p.id, p.quantity, 1)}
-                                      >
-                                        <PlusCircle className="h-4 w-4" />
-                                      </Button>
+                                    <div className="flex items-center gap-2 group/stock">
+                                      <Input 
+                                        type="number" 
+                                        defaultValue={p.quantity}
+                                        className="w-20 h-8 text-sm font-bold"
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            const val = parseInt(e.currentTarget.value);
+                                            if (!isNaN(val)) handleUpdateStock(p.id, val);
+                                          }
+                                        }}
+                                        onBlur={(e) => {
+                                          const val = parseInt(e.target.value);
+                                          if (!isNaN(val) && val !== p.quantity) {
+                                            handleUpdateStock(p.id, val);
+                                          }
+                                        }}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="text-[10px] text-muted-foreground uppercase font-bold">{p.unit}</span>
+                                        <Check className="h-3 w-3 text-primary opacity-0 group-focus-within/stock:opacity-100 transition-opacity" />
+                                      </div>
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right">
@@ -1013,7 +1014,7 @@ export default function DashboardPage() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
-                                  onClick={() => handleSetDefaultAddress(addr.id)}
+                                  onClick={() => handleSetDefaultAddress(id)}
                                 >
                                   Set Default
                                 </Button>
