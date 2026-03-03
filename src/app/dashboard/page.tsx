@@ -32,7 +32,6 @@ import {
   Camera,
   Truck,
   PlusCircle,
-  MinusCircle,
   Check
 } from "lucide-react";
 import { 
@@ -48,6 +47,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
