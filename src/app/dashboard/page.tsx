@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -68,6 +69,14 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
+// Shared utility to resolve backend image paths
+const resolveImageUrl = (path: string | null | undefined) => {
+  if (!path) return null;
+  if (path.startsWith('http') || path.startsWith('data:')) return path;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `http://localhost:8080${cleanPath}`;
+};
+
 export default function DashboardPage() {
   const { user: authUser, token, logout, isAuthenticated, updateUser } = useAuth();
   const router = useRouter();
@@ -130,13 +139,6 @@ export default function DashboardPage() {
   const [isSalesLoading, setIsSalesLoading] = useState(false);
 
   const isFarmer = authUser?.roles.includes('ROLE_FARMER');
-
-  const resolveImageUrl = (path: string) => {
-    if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return `http://localhost:8080${cleanPath}`;
-  };
 
   const fetchProfile = useCallback(async () => {
     if (!token) return;
@@ -681,6 +683,7 @@ export default function DashboardPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="w-[80px]">Image</TableHead>
                                 <TableHead>Yield</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Stock</TableHead>
@@ -690,6 +693,23 @@ export default function DashboardPage() {
                             <TableBody>
                               {products.map(p => (
                                 <TableRow key={p.id}>
+                                  <TableCell>
+                                    <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
+                                      {(p.imageUrl || p.image) ? (
+                                        <Image 
+                                          src={resolveImageUrl(p.imageUrl || p.image)!} 
+                                          alt={p.name} 
+                                          fill 
+                                          className="object-cover" 
+                                          unoptimized 
+                                        />
+                                      ) : (
+                                        <div className="flex items-center justify-center h-full w-full">
+                                          <Package className="h-4 w-4 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </TableCell>
                                   <TableCell className="font-medium">{p.name}</TableCell>
                                   <TableCell>₹{p.price}/{p.unit}</TableCell>
                                   <TableCell>{p.quantity}</TableCell>
@@ -1092,6 +1112,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-[80px]">Image</TableHead>
           <TableHead>Item</TableHead>
           <TableHead>Quantity</TableHead>
           <TableHead>Total Price</TableHead>
@@ -1102,6 +1123,23 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
       <TableBody>
         {items.map((item) => (
           <TableRow key={item.id}>
+            <TableCell>
+              <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
+                {item.imageUrl ? (
+                  <Image 
+                    src={resolveImageUrl(item.imageUrl)!} 
+                    alt={item.productName} 
+                    fill 
+                    className="object-cover" 
+                    unoptimized 
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full w-full">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            </TableCell>
             <TableCell className="font-medium">
               <div className="flex flex-col">
                 <span>{item.productName}</span>
