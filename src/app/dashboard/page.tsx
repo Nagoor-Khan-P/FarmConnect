@@ -98,6 +98,7 @@ export default function DashboardPage() {
   const [farms, setFarms] = useState<any[]>([]);
   const [isLoadingFarms, setIsLoadingFarms] = useState(true);
   const [isFarmDialogOpen, setIsFarmDialogOpen] = useState(false);
+  const [isFarmSaving, setIsFarmSaving] = useState(false);
   const [editingFarm, setEditingFarm] = useState<any>(null);
   const [farmImageFile, setFarmImageFile] = useState<File | null>(null);
   const [farmFormData, setFarmFormData] = useState({
@@ -109,10 +110,19 @@ export default function DashboardPage() {
   // Product State
   const [products, setProducts] = useState<any[]>([]);
   const [isProductsLoading, setIsProductsLoading] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: ""
+  const [isProductSaving, setIsProductSaving] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productFormData, setProductFormData] = useState({
+    name: "", 
+    description: "", 
+    price: 0, 
+    category: "Vegetables", 
+    unit: "kg", 
+    quantity: 10, 
+    farmId: ""
   });
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
@@ -438,26 +448,121 @@ export default function DashboardPage() {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const handleSaveFarm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProduct.farmId) return;
+    setIsFarmSaving(true);
     try {
       const formData = new FormData();
-      const productBlob = new Blob([JSON.stringify(newProduct)], { type: 'application/json' });
+      const farmData = {
+        name: farmFormData.name,
+        description: farmFormData.description,
+        address: farmFormData.address
+      };
+      
+      const farmBlob = new Blob([JSON.stringify(farmData)], { type: 'application/json' });
+      formData.append('farm', farmBlob);
+      if (farmImageFile) {
+        formData.append('image', farmImageFile);
+      }
+
+      const url = editingFarm ? `http://localhost:8080/api/farms/${editingFarm.id}` : 'http://localhost:8080/api/farms';
+      const method = editingFarm ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Authorization': token || '' },
+        body: formData,
+      });
+
+      if (response.ok) {
+        toast({ title: editingFarm ? "Farm Updated" : "Farm Registered" });
+        setIsFarmDialogOpen(false);
+        setEditingFarm(null);
+        setFarmImageFile(null);
+        fetchMyFarms();
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+      setIsFarmSaving(false);
+    }
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productFormData.farmId) return;
+    setIsProductSaving(true);
+    try {
+      const formData = new FormData();
+      const productBlob = new Blob([JSON.stringify(productFormData)], { type: 'application/json' });
       formData.append('product', productBlob);
-      const response = await fetch('http://localhost:8080/api/products', {
-        method: 'POST',
+      if (productImageFile) {
+        formData.append('image', productImageFile);
+      }
+
+      const url = editingProduct ? `http://localhost:8080/api/products/${editingProduct.id}` : 'http://localhost:8080/api/products';
+      const method = editingProduct ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Authorization': token || '' },
         body: formData,
       });
       if (response.ok) {
-        toast({ title: "Yield Added" });
-        setIsDialogOpen(false);
+        toast({ title: editingProduct ? "Yield Updated" : "Yield Added" });
+        setIsProductDialogOpen(false);
+        setEditingProduct(null);
+        setProductImageFile(null);
         fetchMyProducts();
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+      setIsProductSaving(false);
     }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!productToDelete || !token) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${productToDelete.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        toast({ title: "Product Deleted" });
+        fetchMyProducts();
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete product." });
+    } finally {
+      setIsDeleteConfirmOpen(false);
+      setProductToDelete(null);
+    }
+  };
+
+  const openEditFarm = (farm: any) => {
+    setEditingFarm(farm);
+    setFarmFormData({
+      name: farm.name,
+      description: farm.description,
+      address: farm.address || { street: "", city: "", state: "", zipCode: "", country: "India" }
+    });
+    setIsFarmDialogOpen(true);
+  };
+
+  const openEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setProductFormData({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      unit: product.unit,
+      quantity: product.quantity,
+      farmId: product.farm?.id || product.farmId || ""
+    });
+    setIsProductDialogOpen(true);
   };
 
   if (!authUser) return null;
@@ -624,7 +729,7 @@ export default function DashboardPage() {
                   <TabsContent value="farm">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold font-headline">My Farm Storefronts</h3>
-                      <Button onClick={() => setIsFarmDialogOpen(true)} className="gap-2"><Plus className="h-4 w-4" /> Add Farm</Button>
+                      <Button onClick={() => { setEditingFarm(null); setFarmFormData({ name: "", description: "", address: { street: "", city: "", state: "", zipCode: "", country: "India" } }); setIsFarmDialogOpen(true); }} className="gap-2"><Plus className="h-4 w-4" /> Add Farm</Button>
                     </div>
                     {isLoadingFarms ? (
                       <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -637,11 +742,11 @@ export default function DashboardPage() {
                     ) : (
                       <div className="grid grid-cols-1 gap-6">
                         {farms.map((farm) => (
-                          <Card key={farm.id} className="border-t-4 border-t-primary shadow-md overflow-hidden">
+                          <Card key={farm.id} className="border-t-4 border-t-primary shadow-md overflow-hidden group">
                             <CardHeader className="flex flex-row items-start justify-between bg-primary/5">
                               <div className="flex gap-4">
                                 <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
-                                  {(farm.imageUrl || farm.image) && (
+                                  {resolveImageUrl(farm.imageUrl || farm.image) ? (
                                     <Image 
                                       src={resolveImageUrl(farm.imageUrl || farm.image)!} 
                                       alt={farm.name} 
@@ -649,6 +754,10 @@ export default function DashboardPage() {
                                       className="object-cover" 
                                       unoptimized 
                                     />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full w-full">
+                                      <Store className="h-6 w-6 text-muted-foreground" />
+                                    </div>
                                   )}
                                 </div>
                                 <div>
@@ -658,6 +767,14 @@ export default function DashboardPage() {
                                   </CardDescription>
                                 </div>
                               </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="opacity-0 group-hover:opacity-100 transition-opacity gap-1.5"
+                                onClick={() => openEditFarm(farm)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" /> Edit Farm
+                              </Button>
                             </CardHeader>
                             <CardContent className="pt-6">
                               <p className="text-sm text-muted-foreground">{farm.description}</p>
@@ -672,7 +789,7 @@ export default function DashboardPage() {
                      <Card className="shadow-sm">
                       <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Yield Inventory</CardTitle>
-                        <Button onClick={() => setIsDialogOpen(true)} disabled={farms.length === 0} className="gap-2"><Plus className="h-4 w-4" /> Add Yield</Button>
+                        <Button onClick={() => { setEditingProduct(null); setProductFormData({ name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: farms[0]?.id || "" }); setIsProductDialogOpen(true); }} disabled={farms.length === 0} className="gap-2"><Plus className="h-4 w-4" /> Add Yield</Button>
                       </CardHeader>
                       <CardContent>
                         {isProductsLoading ? (
@@ -695,7 +812,7 @@ export default function DashboardPage() {
                                 <TableRow key={p.id}>
                                   <TableCell>
                                     <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
-                                      {(p.imageUrl || p.image) ? (
+                                      {resolveImageUrl(p.imageUrl || p.image) ? (
                                         <Image 
                                           src={resolveImageUrl(p.imageUrl || p.image)!} 
                                           alt={p.name} 
@@ -712,9 +829,16 @@ export default function DashboardPage() {
                                   </TableCell>
                                   <TableCell className="font-medium">{p.name}</TableCell>
                                   <TableCell>₹{p.price}/{p.unit}</TableCell>
-                                  <TableCell>{p.quantity}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={p.quantity < 5 ? "destructive" : "secondary"}>
+                                      {p.quantity} {p.unit}
+                                    </Badge>
+                                  </TableCell>
                                   <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                                    <div className="flex justify-end gap-1">
+                                      <Button variant="ghost" size="icon" onClick={() => openEditProduct(p)}><Pencil className="h-4 w-4" /></Button>
+                                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -988,9 +1112,10 @@ export default function DashboardPage() {
         <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader><AlertDialogTitle>Delete Yield?</AlertDialogTitle></AlertDialogHeader>
+            <AlertDialogDescription>Are you sure you want to remove this yield from your inventory? This action cannot be undone.</AlertDialogDescription>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => {}} className="bg-destructive">Delete</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -1008,40 +1133,115 @@ export default function DashboardPage() {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Farm Form Dialog */}
         <Dialog open={isFarmDialogOpen} onOpenChange={setIsFarmDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
-            <form className="space-y-4">
-              <DialogHeader><DialogTitle>Register Farm</DialogTitle></DialogHeader>
+            <form onSubmit={handleSaveFarm} className="space-y-4">
+              <DialogHeader>
+                <DialogTitle>{editingFarm ? "Edit Farm Storefront" : "Register New Farm"}</DialogTitle>
+                <DialogDescription>Update your farm's public profile and contact info.</DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="relative h-24 w-full rounded-md bg-muted border overflow-hidden">
+                  {farmImageFile ? (
+                    <Image src={URL.createObjectURL(farmImageFile)} alt="Preview" fill className="object-cover" />
+                  ) : resolveImageUrl(editingFarm?.imageUrl || editingFarm?.image) ? (
+                    <Image src={resolveImageUrl(editingFarm?.imageUrl || editingFarm?.image)!} alt="Current" fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <Store className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                  )}
+                  <label htmlFor="farm-image-upload" className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                    <Camera className="h-6 w-6 text-white" />
+                  </label>
+                  <input id="farm-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => setFarmImageFile(e.target.files?.[0] || null)} />
+                </div>
+                <p className="text-xs text-muted-foreground">Click to upload farm cover photo</p>
+              </div>
+
               <div className="space-y-4">
-                <div className="space-y-2"><Label>Name</Label><Input required value={farmFormData.name} /></div>
+                <div className="space-y-2"><Label>Farm Name</Label><Input required value={farmFormData.name} onChange={(e) => setFarmFormData({...farmFormData, name: e.target.value})} /></div>
+                <div className="space-y-2"><Label>Description</Label><Input required value={farmFormData.description} onChange={(e) => setFarmFormData({...farmFormData, description: e.target.value})} /></div>
+                <div className="space-y-2"><Label>Street</Label><Input required value={farmFormData.address.street} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, street: e.target.value }})} /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>City</Label><Input required value={farmFormData.address.city} /></div>
-                  <div className="space-y-2"><Label>State</Label><Input required value={farmFormData.address.state} /></div>
+                  <div className="space-y-2"><Label>City</Label><Input required value={farmFormData.address.city} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, city: e.target.value }})} /></div>
+                  <div className="space-y-2"><Label>State</Label><Input required value={farmFormData.address.state} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, state: e.target.value }})} /></div>
                 </div>
               </div>
-              <DialogFooter><Button className="w-full">Register</Button></DialogFooter>
+              <DialogFooter>
+                <Button type="submit" className="w-full h-11 font-bold" disabled={isFarmSaving}>
+                  {isFarmSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingFarm ? "Update Farm" : "Register Farm"}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {/* Product Form Dialog */}
+        <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
           <DialogContent className="sm:max-w-[550px]">
-            <form onSubmit={handleAddProduct} className="space-y-4">
-               <DialogHeader><DialogTitle>Add New Yield</DialogTitle></DialogHeader>
+            <form onSubmit={handleSaveProduct} className="space-y-4">
+               <DialogHeader>
+                 <DialogTitle>{editingProduct ? "Edit Yield Details" : "Add New Yield"}</DialogTitle>
+                 <DialogDescription>Update pricing, availability, and stock levels.</DialogDescription>
+               </DialogHeader>
+               
+               <div className="flex flex-col items-center gap-4 py-2">
+                 <div className="relative h-24 w-32 rounded-md bg-muted border overflow-hidden">
+                    {productImageFile ? (
+                      <Image src={URL.createObjectURL(productImageFile)} alt="Preview" fill className="object-cover" />
+                    ) : resolveImageUrl(editingProduct?.imageUrl || editingProduct?.image) ? (
+                      <Image src={resolveImageUrl(editingProduct?.imageUrl || editingProduct?.image)!} alt="Current" fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center">
+                        <Package className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                    )}
+                    <label htmlFor="product-image-upload" className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                      <Camera className="h-6 w-6 text-white" />
+                    </label>
+                    <input id="product-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => setProductImageFile(e.target.files?.[0] || null)} />
+                 </div>
+                 <p className="text-xs text-muted-foreground">Product Photo</p>
+               </div>
+
                <div className="space-y-4">
                  <div className="space-y-2">
-                    <Label>Select Farm</Label>
-                    <select className="w-full h-10 rounded-md border" required value={newProduct.farmId} onChange={(e) => setNewProduct({...newProduct, farmId: e.target.value})}>
-                      <option value="">Choose...</option>
+                    <Label>Source Farm</Label>
+                    <select 
+                      className="w-full h-10 rounded-md border px-3 text-sm focus:ring-2 focus:ring-primary outline-none" 
+                      required 
+                      value={productFormData.farmId} 
+                      onChange={(e) => setProductFormData({...productFormData, farmId: e.target.value})}
+                      disabled={!!editingProduct}
+                    >
+                      <option value="">Choose your farm...</option>
                       {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Name</Label><Input required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} /></div>
-                    <div className="space-y-2"><Label>Category</Label><Input required value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Yield Name</Label><Input required value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Category</Label><Input required value={productFormData.category} onChange={(e) => setProductFormData({...productFormData, category: e.target.value})} /></div>
                  </div>
+                 <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2"><Label>Price (₹)</Label><Input type="number" required value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: parseFloat(e.target.value)})} /></div>
+                    <div className="space-y-2"><Label>Unit</Label><Input required placeholder="kg, jar, bunch" value={productFormData.unit} onChange={(e) => setProductFormData({...productFormData, unit: e.target.value})} /></div>
+                    <div className="space-y-2">
+                      <Label>Stock Qty</Label>
+                      <Input type="number" required value={productFormData.quantity} onChange={(e) => setProductFormData({...productFormData, quantity: parseInt(e.target.value)})} />
+                    </div>
+                 </div>
+                 <div className="space-y-2"><Label>Description</Label><Input required value={productFormData.description} onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} /></div>
                </div>
-               <DialogFooter><Button type="submit" className="w-full">List Yield</Button></DialogFooter>
+               <DialogFooter>
+                 <Button type="submit" className="w-full h-11 font-bold" disabled={isProductSaving}>
+                   {isProductSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                   {editingProduct ? "Update Yield" : "List Yield"}
+                 </Button>
+               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -1125,7 +1325,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
           <TableRow key={item.id}>
             <TableCell>
               <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
-                {item.imageUrl ? (
+                {resolveImageUrl(item.imageUrl) ? (
                   <Image 
                     src={resolveImageUrl(item.imageUrl)!} 
                     alt={item.productName} 
