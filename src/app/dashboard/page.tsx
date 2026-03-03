@@ -473,7 +473,9 @@ export default function DashboardPage() {
         formData.append('image', farmImageFile);
       }
 
-      const url = editingFarm ? `http://localhost:8080/api/farms/${editingFarm.id}` : 'http://localhost:8080/api/farms';
+      const url = editingFarm 
+        ? `http://localhost:8080/api/farms/${editingFarm.id}` 
+        : 'http://localhost:8080/api/farms/register';
       const method = editingFarm ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -488,6 +490,9 @@ export default function DashboardPage() {
         setEditingFarm(null);
         setFarmImageFile(null);
         fetchMyFarms();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to save farm.");
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -554,6 +559,9 @@ export default function DashboardPage() {
         setEditingProduct(null);
         setProductImageFile(null);
         fetchMyProducts();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to save product.");
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
