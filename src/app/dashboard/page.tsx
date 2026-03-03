@@ -62,7 +62,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -645,6 +645,16 @@ export default function DashboardPage() {
     setIsStockDialogOpen(true);
   };
 
+  // Memoize grouped products for the Inventory tab
+  const groupedProducts = useMemo(() => {
+    return products.reduce((acc, product) => {
+      const farmName = product.farmName || "Unassigned Yields";
+      if (!acc[farmName]) acc[farmName] = [];
+      acc[farmName].push(product);
+      return acc;
+    }, {} as Record<string, any[]>);
+  }, [products]);
+
   if (!authUser) return null;
 
   return (
@@ -888,7 +898,10 @@ export default function DashboardPage() {
                   <TabsContent value="inventory">
                      <Card className="shadow-sm">
                       <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Yield Inventory</CardTitle>
+                        <div>
+                          <CardTitle>Yield Inventory</CardTitle>
+                          <CardDescription>Managed grouped by source farm.</CardDescription>
+                        </div>
                         <Button onClick={() => { setEditingProduct(null); setProductFormData({ name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: farms[0]?.id || "" }); setIsProductDialogOpen(true); }} disabled={farms.length === 0} className="gap-2"><Plus className="h-4 w-4" /> Add Yield</Button>
                       </CardHeader>
                       <CardContent>
@@ -897,60 +910,71 @@ export default function DashboardPage() {
                         ) : products.length === 0 ? (
                           <div className="text-center py-12 border-2 border-dashed rounded-lg text-muted-foreground">No yields listed.</div>
                         ) : (
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-[80px]">Image</TableHead>
-                                <TableHead>Yield</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Stock Level</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {products.map(p => (
-                                <TableRow key={p.id}>
-                                  <TableCell>
-                                    <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
-                                      {resolveImageUrl(p.imageUrl || p.image) ? (
-                                        <Image 
-                                          src={resolveImageUrl(p.imageUrl || p.image)!} 
-                                          alt={p.name} 
-                                          fill 
-                                          className="object-cover" 
-                                          unoptimized 
-                                        />
-                                      ) : (
-                                        <div className="flex items-center justify-center h-full w-full">
-                                          <Package className="h-4 w-4 text-muted-foreground" />
-                                        </div>
-                                      )}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="font-medium">{p.name}</TableCell>
-                                  <TableCell>₹{p.price}/{p.unit}</TableCell>
-                                  <TableCell>
-                                    <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="rounded-sm px-2">
-                                      {p.quantity} {p.unit}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex justify-end gap-1">
-                                      <Button variant="ghost" size="icon" title="Update Stock" onClick={() => openStockUpdate(p)} className="text-primary hover:bg-primary/10">
-                                        <Package className="h-4 w-4" />
-                                      </Button>
-                                      <Button variant="ghost" size="icon" title="Edit Product" onClick={() => openEditProduct(p)}>
-                                        <Pencil className="h-4 w-4" />
-                                      </Button>
-                                      <Button variant="ghost" size="icon" title="Delete Product" className="text-destructive hover:bg-destructive/10" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                          <div className="space-y-10">
+                            {Object.entries(groupedProducts).map(([farmName, farmProducts]) => (
+                              <div key={farmName} className="space-y-4">
+                                <div className="flex items-center gap-2 px-1">
+                                  <Store className="h-5 w-5 text-primary" />
+                                  <h4 className="font-bold text-lg text-primary">{farmName}</h4>
+                                  <Separator className="flex-1" />
+                                </div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[80px]">Image</TableHead>
+                                      <TableHead>Yield</TableHead>
+                                      <TableHead>Price</TableHead>
+                                      <TableHead>Stock Level</TableHead>
+                                      <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {farmProducts.map(p => (
+                                      <TableRow key={p.id}>
+                                        <TableCell>
+                                          <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
+                                            {resolveImageUrl(p.imageUrl || p.image) ? (
+                                              <Image 
+                                                src={resolveImageUrl(p.imageUrl || p.image)!} 
+                                                alt={p.name} 
+                                                fill 
+                                                className="object-cover" 
+                                                unoptimized 
+                                              />
+                                            ) : (
+                                              <div className="flex items-center justify-center h-full w-full">
+                                                <Package className="h-4 w-4 text-muted-foreground" />
+                                              </div>
+                                            )}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="font-medium">{p.name}</TableCell>
+                                        <TableCell>₹{p.price}/{p.unit}</TableCell>
+                                        <TableCell>
+                                          <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="rounded-sm px-2">
+                                            {p.quantity} {p.unit}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex justify-end gap-1">
+                                            <Button variant="ghost" size="icon" title="Update Stock" onClick={() => openStockUpdate(p)} className="text-primary hover:bg-primary/10">
+                                              <Package className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" title="Edit Product" onClick={() => openEditProduct(p)}>
+                                              <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" title="Delete Product" className="text-destructive hover:bg-destructive/10" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </CardContent>
                     </Card>
