@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams } from "next/navigation";
@@ -191,10 +190,10 @@ export default function FarmerProfilePage() {
                       </div>
                       <CardHeader>
                         <CardTitle className="text-2xl text-primary">{farm.name}</CardTitle>
-                        <CardDescription className="flex items-center gap-1.5 mt-2">
-                          <MapPin className="h-4 w-4 text-primary" /> 
+                        <CardDescription className="flex items-start gap-1.5 mt-2">
+                          <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" /> 
                           <span className="font-bold text-foreground">
-                            {farm.address?.street}, {farm.address?.city}, {farm.address?.state} {farm.address?.zipCode}
+                            {farm.address?.street}, {farm.address?.city}, {farm.address?.state} {farm.address?.zipCode}, {farm.address?.country || "India"}
                           </span>
                         </CardDescription>
                       </CardHeader>
@@ -202,11 +201,6 @@ export default function FarmerProfilePage() {
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {farm.description || "A beautiful local farm dedicated to organic and sustainable agriculture practices."}
                         </p>
-                        <div className="flex items-center gap-4 pt-2">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/5 px-2 py-1 rounded-sm uppercase tracking-wider">
-                            <Globe className="h-3.5 w-3.5" /> {farm.address?.country || "India"}
-                          </div>
-                        </div>
                       </CardContent>
                     </Card>
                   ))}

@@ -824,8 +824,18 @@ export default function DashboardPage() {
                                 <Pencil className="h-3.5 w-3.5" /> Edit Farm
                               </Button>
                             </CardHeader>
-                            <CardContent className="pt-6">
+                            <CardContent className="pt-6 space-y-4">
                               <p className="text-sm text-muted-foreground">{farm.description}</p>
+                              {farm.address && (
+                                <div className="text-sm border-t pt-4">
+                                  <p className="font-bold flex items-center gap-2 mb-1">
+                                    <MapPin className="h-4 w-4 text-primary" /> Location
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    {farm.address.street}, {farm.address.city}, {farm.address.state} {farm.address.zipCode}, {farm.address.country}
+                                  </p>
+                                </div>
+                              )}
                             </CardContent>
                           </Card>
                         ))}
@@ -1156,7 +1166,7 @@ export default function DashboardPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Global Dialogs */}
+        {/* Global Address Dialogs */}
         <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <form onSubmit={handleSaveAddress}>
@@ -1169,15 +1179,15 @@ export default function DashboardPage() {
                   <Label htmlFor="street">Street Address</Label>
                   <div className="relative">
                     <Home className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="street" className="pl-9" required value={addressForm.street} onChange={(e) => setAddressForm({...addressForm, street: e.target.value})} />
+                    <Input id="street" className="pl-9" placeholder="e.g. 123 Farm Lane" required value={addressForm.street} onChange={(e) => setAddressForm({...addressForm, street: e.target.value})} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>City</Label><Input required value={addressForm.city} onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>State</Label><Input required value={addressForm.state} onChange={(e) => setAddressForm({...addressForm, state: e.target.value})} /></div>
+                  <div className="space-y-2"><Label>City</Label><Input placeholder="City" required value={addressForm.city} onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} /></div>
+                  <div className="space-y-2"><Label>State</Label><Input placeholder="State" required value={addressForm.state} onChange={(e) => setAddressForm({...addressForm, state: e.target.value})} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Zip Code</Label><Input required value={addressForm.zipCode} onChange={(e) => setAddressForm({...addressForm, zipCode: e.target.value})} /></div>
+                  <div className="space-y-2"><Label>Zip Code</Label><Input placeholder="Zip Code" required value={addressForm.zipCode} onChange={(e) => setAddressForm({...addressForm, zipCode: e.target.value})} /></div>
                   <div className="space-y-2">
                     <Label>Country</Label>
                     <div className="relative">
@@ -1252,10 +1262,26 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="space-y-2"><Label>Farm Name</Label><Input required value={farmFormData.name} onChange={(e) => setFarmFormData({...farmFormData, name: e.target.value})} /></div>
                 <div className="space-y-2"><Label>Description</Label><Input required value={farmFormData.description} onChange={(e) => setFarmFormData({...farmFormData, description: e.target.value})} /></div>
-                <div className="space-y-2"><Label>Street</Label><Input required value={farmFormData.address.street} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, street: e.target.value }})} /></div>
+                
+                <Separator />
+                <p className="text-sm font-bold text-primary uppercase tracking-wider">Farm Address</p>
+                
+                <div className="space-y-2">
+                  <Label>Street</Label>
+                  <Input 
+                    placeholder="e.g. 123 Farm Lane"
+                    required 
+                    value={farmFormData.address.street} 
+                    onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, street: e.target.value }})} 
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>City</Label><Input required value={farmFormData.address.city} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, city: e.target.value }})} /></div>
-                  <div className="space-y-2"><Label>State</Label><Input required value={farmFormData.address.state} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, state: e.target.value }})} /></div>
+                  <div className="space-y-2"><Label>City</Label><Input placeholder="City" required value={farmFormData.address.city} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, city: e.target.value }})} /></div>
+                  <div className="space-y-2"><Label>State</Label><Input placeholder="State" required value={farmFormData.address.state} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, state: e.target.value }})} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Zip Code</Label><Input placeholder="Zip Code" required value={farmFormData.address.zipCode} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, zipCode: e.target.value }})} /></div>
+                  <div className="space-y-2"><Label>Country</Label><Input placeholder="Country" required value={farmFormData.address.country} onChange={(e) => setFarmFormData({...farmFormData, address: { ...farmFormData.address, country: e.target.value }})} /></div>
                 </div>
               </div>
               <DialogFooter>
