@@ -1046,7 +1046,7 @@ export default function DashboardPage() {
 
         {/* Edit Profile Dialog */}
         <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleUpdateProfile}>
               <DialogHeader>
                 <DialogTitle>Update Your Profile</DialogTitle>
@@ -1168,7 +1168,7 @@ export default function DashboardPage() {
 
         {/* Global Address Dialogs */}
         <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSaveAddress}>
               <DialogHeader>
                 <DialogTitle>{editingAddress ? "Edit Address" : "Add New Address"}</DialogTitle>
@@ -1233,7 +1233,7 @@ export default function DashboardPage() {
 
         {/* Farm Form Dialog */}
         <Dialog open={isFarmDialogOpen} onOpenChange={setIsFarmDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSaveFarm} className="space-y-4">
               <DialogHeader>
                 <DialogTitle>{editingFarm ? "Edit Farm Storefront" : "Register New Farm"}</DialogTitle>
@@ -1296,7 +1296,7 @@ export default function DashboardPage() {
 
         {/* Product Form Dialog */}
         <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSaveProduct} className="space-y-4">
                <DialogHeader>
                  <DialogTitle>{editingProduct ? "Edit Yield Details" : "Add New Yield"}</DialogTitle>
