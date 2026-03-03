@@ -106,6 +106,8 @@ export default function DashboardPage() {
     description: "",
     address: { street: "", city: "", state: "", zipCode: "", country: "India" }
   });
+  const [farmToDelete, setFarmToDelete] = useState<any>(null);
+  const [isDeleteFarmConfirmOpen, setIsDeleteFarmConfirmOpen] = useState(false);
 
   // Product State
   const [products, setProducts] = useState<any[]>([]);
@@ -494,6 +496,28 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteFarm = async () => {
+    if (!farmToDelete || !token) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/farms/${farmToDelete.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        toast({ title: "Farm Deleted" });
+        fetchMyFarms();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete farm.");
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+      setIsDeleteFarmConfirmOpen(false);
+      setFarmToDelete(null);
+    }
+  };
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productFormData.farmId) return;
@@ -815,14 +839,24 @@ export default function DashboardPage() {
                                   </CardDescription>
                                 </div>
                               </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="opacity-0 group-hover:opacity-100 transition-opacity gap-1.5"
-                                onClick={() => openEditFarm(farm)}
-                              >
-                                <Pencil className="h-3.5 w-3.5" /> Edit Farm
-                              </Button>
+                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="gap-1.5"
+                                  onClick={() => openEditFarm(farm)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" /> Edit
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="gap-1.5 text-destructive border-destructive/20 hover:bg-destructive hover:text-white"
+                                  onClick={() => { setFarmToDelete(farm); setIsDeleteFarmConfirmOpen(true); }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                                </Button>
+                              </div>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-4">
                               <p className="text-sm text-muted-foreground">{farm.description}</p>
@@ -1214,6 +1248,17 @@ export default function DashboardPage() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={isDeleteFarmConfirmOpen} onOpenChange={setIsDeleteFarmConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader><AlertDialogTitle>Delete Farm Storefront?</AlertDialogTitle></AlertDialogHeader>
+            <AlertDialogDescription>Are you sure you want to remove this farm? All products associated with this farm may also be affected. This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteFarm} className="bg-destructive">Delete Farm</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
