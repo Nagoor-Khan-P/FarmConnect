@@ -30,7 +30,8 @@ import {
   XCircle,
   Check,
   CheckCircle2,
-  Camera
+  Camera,
+  Truck
 } from "lucide-react";
 import { 
   Dialog, 
@@ -116,13 +117,17 @@ export default function DashboardPage() {
     street: "", city: "", state: "", zipCode: "", country: "India"
   });
 
-  // Orders State
+  // Orders State (Buyer)
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [historyOrders, setHistoryOrders] = useState<any[]>([]);
   const [isActiveOrdersLoading, setIsActiveOrdersLoading] = useState(false);
   const [isHistoryOrdersLoading, setIsHistoryOrdersLoading] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<any>(null);
   const [isCancelOrderOpen, setIsCancelOrderOpen] = useState(false);
+
+  // Sales State (Farmer)
+  const [sales, setSales] = useState<any[]>([]);
+  const [isSalesLoading, setIsSalesLoading] = useState(false);
 
   const isFarmer = authUser?.roles.includes('ROLE_FARMER');
 
@@ -148,7 +153,6 @@ export default function DashboardPage() {
           lastName: data.lastName || "",
           email: data.email || ""
         });
-        // Sync with AuthContext to update Navbar image
         updateUser({
           firstName: data.firstName,
           lastName: data.lastName,
@@ -219,6 +223,24 @@ export default function DashboardPage() {
     }
   }, [token]);
 
+  const fetchMySales = useCallback(async () => {
+    if (!token) return;
+    setIsSalesLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/orders/my-sales', {
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSales(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Error fetching sales:", error);
+    } finally {
+      setIsSalesLoading(false);
+    }
+  }, [token]);
+
   const fetchActiveOrders = useCallback(async () => {
     if (!token) return;
     setIsActiveOrdersLoading(true);
@@ -265,12 +287,13 @@ export default function DashboardPage() {
     if (isFarmer) {
       fetchMyFarms();
       fetchMyProducts();
+      fetchMySales();
     } else {
       fetchActiveOrders();
       fetchHistoryOrders();
     }
     fetchAddresses();
-  }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchActiveOrders, fetchHistoryOrders, fetchAddresses, fetchProfile, router]);
+  }, [isAuthenticated, isFarmer, fetchMyFarms, fetchMyProducts, fetchMySales, fetchActiveOrders, fetchHistoryOrders, fetchAddresses, fetchProfile, router]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,7 +316,6 @@ export default function DashboardPage() {
       if (response.ok) {
         const updatedData = await response.json();
         setProfile(updatedData);
-        // Sync with AuthContext to update Navbar image
         updateUser({
           firstName: updatedData.firstName,
           lastName: updatedData.lastName,
@@ -310,6 +332,22 @@ export default function DashboardPage() {
       toast({ variant: "destructive", title: "Update Failed", description: error.message });
     } finally {
       setIsProfileSaving(false);
+    }
+  };
+
+  const handleUpdateItemStatus = async (itemId: string, status: string) => {
+    if (!token) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/orders/item/${itemId}/status?status=${status}`, {
+        method: 'PUT',
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        toast({ title: "Status Updated", description: `Item marked as ${status.toLowerCase()}.` });
+        fetchMySales();
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Update Failed", description: error.message });
     }
   };
 
@@ -473,10 +511,11 @@ export default function DashboardPage() {
               <p className="text-muted-foreground mt-1">Welcome back, {profile?.username || authUser.username}!</p>
             </div>
             
-            <Tabs defaultValue={isFarmer ? "farm" : "active-orders"} className="space-y-6">
-              <TabsList className="bg-muted/50 p-1">
+            <Tabs defaultValue={isFarmer ? "sales" : "active-orders"} className="space-y-6">
+              <TabsList className="bg-muted/50 p-1 flex-wrap h-auto gap-1">
                 {isFarmer ? (
                   <>
+                    <TabsTrigger value="sales" className="gap-2"><Truck className="h-4 w-4" /> My Sales</TabsTrigger>
                     <TabsTrigger value="farm" className="gap-2"><Store className="h-4 w-4" /> My Farms</TabsTrigger>
                     <TabsTrigger value="inventory" className="gap-2"><Package className="h-4 w-4" /> Inventory</TabsTrigger>
                   </>
@@ -554,6 +593,32 @@ export default function DashboardPage() {
 
               {isFarmer && (
                 <>
+                  <TabsContent value="sales">
+                    <Card className="shadow-sm">
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>My Sales</CardTitle>
+                          <CardDescription>Manage incoming orders for your yields.</CardDescription>
+                        </div>
+                        <Button variant="outline" size="icon" onClick={fetchMySales} disabled={isSalesLoading}>
+                          <RefreshCcw className={`h-4 w-4 ${isSalesLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </CardHeader>
+                      <CardContent>
+                        {isSalesLoading ? (
+                          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : sales.length === 0 ? (
+                          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">No sales recorded yet. Keep growing!</p>
+                          </div>
+                        ) : (
+                          <SalesTable items={sales} onUpdateStatus={handleUpdateItemStatus} />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
                   <TabsContent value="farm">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold font-headline">My Farm Storefronts</h3>
@@ -679,7 +744,6 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                {/* Shipping Addresses Section */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
@@ -1008,6 +1072,62 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
                 </Button>
               </TableCell>
             )}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (id: string, status: string) => void }) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Item</TableHead>
+          <TableHead>Quantity</TableHead>
+          <TableHead>Total Price</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-right">Action</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={item.id}>
+            <TableCell className="font-medium">
+              <div className="flex flex-col">
+                <span>{item.productName}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">ID: {item.id.substring(0, 8)}</span>
+              </div>
+            </TableCell>
+            <TableCell>{item.quantity} {item.unit}</TableCell>
+            <TableCell className="font-bold text-primary">₹{(item.price * item.quantity).toFixed(2)}</TableCell>
+            <TableCell>
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "uppercase text-[10px] rounded-sm",
+                  item.status === 'PENDING' ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
+                )}
+              >
+                {item.status}
+              </Badge>
+            </TableCell>
+            <TableCell className="text-right">
+              {item.status === 'PENDING' ? (
+                <Button 
+                  size="sm" 
+                  className="h-8 font-bold gap-1.5"
+                  onClick={() => onUpdateStatus(item.id, 'SHIPPED')}
+                >
+                  <Package className="h-3 w-3" /> Mark as Shipped
+                </Button>
+              ) : (
+                <div className="flex items-center justify-end gap-1 text-green-600 text-xs font-bold uppercase">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Fulfilled
+                </div>
+              )}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
