@@ -126,6 +126,12 @@ export default function DashboardPage() {
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
+  // Stock Update State
+  const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
+  const [productForStock, setProductForStock] = useState<any>(null);
+  const [newStockValue, setNewStockValue] = useState<number>(0);
+  const [isStockSaving, setIsStockSaving] = useState(false);
+
   // Address State
   const [addresses, setAddresses] = useState<any[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
@@ -532,23 +538,29 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUpdateStock = async (productId: string, newStock: number) => {
-    if (!token) return;
+  const handleUpdateStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productForStock || !token) return;
+    setIsStockSaving(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/products/${productId}/stock`, {
+      const response = await fetch(`http://localhost:8080/api/products/${productForStock.id}/stock`, {
         method: 'PATCH',
         headers: { 
           'Authorization': token,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(newStock)
+        body: JSON.stringify(newStockValue)
       });
       if (response.ok) {
-        toast({ title: "Stock Updated", description: `New stock level: ${newStock}` });
+        toast({ title: "Stock Updated", description: `New stock level for ${productForStock.name}: ${newStockValue}` });
+        setIsStockDialogOpen(false);
+        setProductForStock(null);
         fetchMyProducts();
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+      setIsStockSaving(false);
     }
   };
 
@@ -593,6 +605,12 @@ export default function DashboardPage() {
       farmId: product.farm?.id || product.farmId || ""
     });
     setIsProductDialogOpen(true);
+  };
+
+  const openStockUpdate = (product: any) => {
+    setProductForStock(product);
+    setNewStockValue(product.quantity || 0);
+    setIsStockDialogOpen(true);
   };
 
   if (!authUser) return null;
@@ -833,7 +851,7 @@ export default function DashboardPage() {
                                 <TableHead className="w-[80px]">Image</TableHead>
                                 <TableHead>Yield</TableHead>
                                 <TableHead>Price</TableHead>
-                                <TableHead>Stock (Direct Update)</TableHead>
+                                <TableHead>Stock Level</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -860,34 +878,21 @@ export default function DashboardPage() {
                                   <TableCell className="font-medium">{p.name}</TableCell>
                                   <TableCell>₹{p.price}/{p.unit}</TableCell>
                                   <TableCell>
-                                    <div className="flex items-center gap-2 group/stock">
-                                      <Input 
-                                        type="number" 
-                                        defaultValue={p.quantity}
-                                        className="w-20 h-8 text-sm font-bold"
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
-                                            const val = parseInt(e.currentTarget.value);
-                                            if (!isNaN(val)) handleUpdateStock(p.id, val);
-                                          }
-                                        }}
-                                        onBlur={(e) => {
-                                          const val = parseInt(e.target.value);
-                                          if (!isNaN(val) && val !== p.quantity) {
-                                            handleUpdateStock(p.id, val);
-                                          }
-                                        }}
-                                      />
-                                      <div className="flex flex-col">
-                                        <span className="text-[10px] text-muted-foreground uppercase font-bold">{p.unit}</span>
-                                        <Check className="h-3 w-3 text-primary opacity-0 group-focus-within/stock:opacity-100 transition-opacity" />
-                                      </div>
-                                    </div>
+                                    <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="rounded-sm px-2">
+                                      {p.quantity} {p.unit}
+                                    </Badge>
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
-                                      <Button variant="ghost" size="icon" onClick={() => openEditProduct(p)}><Pencil className="h-4 w-4" /></Button>
-                                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                                      <Button variant="ghost" size="icon" title="Update Stock" onClick={() => openStockUpdate(p)} className="text-primary hover:bg-primary/10">
+                                        <Package className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" title="Edit Product" onClick={() => openEditProduct(p)}>
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" title="Delete Product" className="text-destructive hover:bg-destructive/10" onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
                                     </div>
                                   </TableCell>
                                 </TableRow>
@@ -1112,6 +1117,39 @@ export default function DashboardPage() {
                 <Button type="submit" className="w-full h-11 font-bold" disabled={isProfileSaving}>
                   {isProfileSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Stock Update Dialog */}
+        <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <form onSubmit={handleUpdateStock}>
+              <DialogHeader>
+                <DialogTitle>Update Inventory Stock</DialogTitle>
+                <DialogDescription>
+                  Enter the new total stock level for <span className="font-bold text-primary">{productForStock?.name}</span>.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-6">
+                <div className="space-y-2">
+                  <Label htmlFor="stock">Available Quantity ({productForStock?.unit})</Label>
+                  <Input 
+                    id="stock" 
+                    type="number" 
+                    min="0"
+                    required 
+                    value={newStockValue}
+                    onChange={(e) => setNewStockValue(parseInt(e.target.value) || 0)} 
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full h-11 font-bold" disabled={isStockSaving}>
+                  {isStockSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Stock Quantity
                 </Button>
               </DialogFooter>
             </form>
