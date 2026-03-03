@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -921,11 +922,11 @@ export default function DashboardPage() {
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
-                                      <TableHead>Image</TableHead>
-                                      <TableHead>Yield</TableHead>
-                                      <TableHead>Price</TableHead>
-                                      <TableHead>Stock Level</TableHead>
-                                      <TableHead className="w-[140px]">Actions</TableHead>
+                                      <TableHead className="text-left">Image</TableHead>
+                                      <TableHead className="text-left">Yield</TableHead>
+                                      <TableHead className="text-left">Price</TableHead>
+                                      <TableHead className="text-left">Stock</TableHead>
+                                      <TableHead className="text-left w-[140px]">Actions</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
@@ -948,14 +949,14 @@ export default function DashboardPage() {
                                             )}
                                           </div>
                                         </TableCell>
-                                        <TableCell className="font-medium">{p.name}</TableCell>
-                                        <TableCell>₹{p.price}/{p.unit}</TableCell>
-                                        <TableCell>
-                                          <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="rounded-sm px-2">
+                                        <TableCell className="font-medium text-left">{p.name}</TableCell>
+                                        <TableCell className="text-left">₹{p.price}/{p.unit}</TableCell>
+                                        <TableCell className="text-left">
+                                          <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="rounded-sm px-2 font-bold">
                                             {p.quantity} {p.unit}
                                           </Badge>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="text-left">
                                           <div className="flex justify-start items-center gap-1">
                                             <Button 
                                               variant="ghost" 
@@ -1464,12 +1465,12 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Order ID</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Items</TableHead>
-          <TableHead>Total</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead className="text-left">Order ID</TableHead>
+          <TableHead className="text-left">Date</TableHead>
+          <TableHead className="text-left">Items</TableHead>
+          <TableHead className="text-left">Total</TableHead>
+          <TableHead className="text-left">Status</TableHead>
+          <TableHead className="text-left">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -1483,7 +1484,7 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
               </div>
             </TableCell>
             <TableCell>
-              <div className="space-y-1">
+              <div className="space-y-1 text-left">
                 {order.items?.map((item: any, idx: number) => (
                   <div key={idx} className="text-sm font-medium">
                     {item.product?.name} <span className="text-xs text-muted-foreground font-normal">x {item.quantity}</span>
@@ -1521,12 +1522,12 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[80px]">Image</TableHead>
-          <TableHead>Item</TableHead>
-          <TableHead>Quantity</TableHead>
-          <TableHead>Total Price</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Action</TableHead>
+          <TableHead className="text-left w-[80px]">Image</TableHead>
+          <TableHead className="text-left">Item</TableHead>
+          <TableHead className="text-left">Quantity</TableHead>
+          <TableHead className="text-left">Total Price</TableHead>
+          <TableHead className="text-left">Status</TableHead>
+          <TableHead className="text-left">Action</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -1549,15 +1550,15 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
                 )}
               </div>
             </TableCell>
-            <TableCell className="font-medium">
+            <TableCell className="font-medium text-left">
               <div className="flex flex-col">
                 <span>{item.productName}</span>
                 <span className="text-[10px] text-muted-foreground font-mono">ID: {item.id.substring(0, 8)}</span>
               </div>
             </TableCell>
-            <TableCell>{item.quantity} {item.unit}</TableCell>
-            <TableCell className="font-bold text-primary">₹{(item.price * item.quantity).toFixed(2)}</TableCell>
-            <TableCell>
+            <TableCell className="text-left">{item.quantity} {item.unit}</TableCell>
+            <TableCell className="font-bold text-primary text-left">₹{(item.price * item.quantity).toFixed(2)}</TableCell>
+            <TableCell className="text-left">
               <Badge 
                 variant="secondary" 
                 className={cn(
@@ -1568,7 +1569,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
                 {item.status}
               </Badge>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-left">
               {item.status === 'PENDING' ? (
                 <Button 
                   size="sm" 
