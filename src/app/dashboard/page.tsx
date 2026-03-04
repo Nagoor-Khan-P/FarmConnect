@@ -895,107 +895,111 @@ export default function DashboardPage() {
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="inventory">
-                     <Card className="shadow-sm">
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                          <CardTitle>Yield Inventory</CardTitle>
-                          <CardDescription>Managed grouped by source farm.</CardDescription>
-                        </div>
-                        <Button onClick={() => { setEditingProduct(null); setProductFormData({ name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: farms[0]?.id || "" }); setIsProductDialogOpen(true); }} disabled={farms.length === 0} className="gap-2"><Plus className="h-4 w-4" /> Add Yield</Button>
-                      </CardHeader>
-                      <CardContent>
-                        {isProductsLoading ? (
-                          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : products.length === 0 ? (
-                          <div className="text-center py-12 border-2 border-dashed rounded-lg text-muted-foreground">No yields listed.</div>
-                        ) : (
-                          <div className="space-y-10">
-                            {Object.entries(groupedProducts).map(([farmName, farmProducts]) => (
-                              <div key={farmName} className="space-y-4">
-                                <div className="flex items-center gap-2 px-1">
-                                  <Store className="h-5 w-5 text-primary" />
-                                  <h4 className="font-bold text-lg text-primary">{farmName}</h4>
-                                  <Separator className="flex-1" />
-                                </div>
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead className="text-left">Image</TableHead>
-                                      <TableHead className="text-left">Yield</TableHead>
-                                      <TableHead className="text-left">Price</TableHead>
-                                      <TableHead className="text-left">Stock</TableHead>
-                                      <TableHead className="text-left w-[140px]">Actions</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {farmProducts.map(p => (
-                                      <TableRow key={p.id}>
-                                        <TableCell>
-                                          <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
-                                            {resolveImageUrl(p.imageUrl || p.image) ? (
-                                              <Image 
-                                                src={resolveImageUrl(p.imageUrl || p.image)!} 
-                                                alt={p.name} 
-                                                fill 
-                                                className="object-cover" 
-                                                unoptimized 
-                                              />
-                                            ) : (
-                                              <div className="flex items-center justify-center h-full w-full">
-                                                <Package className="h-4 w-4 text-muted-foreground" />
-                                              </div>
-                                            )}
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium text-left">{p.name}</TableCell>
-                                        <TableCell className="text-left">₹{p.price}/{p.unit}</TableCell>
-                                        <TableCell className="text-left">
-                                          <Badge variant={p.quantity < 5 ? "destructive" : "secondary"} className="rounded-sm px-2 font-bold">
-                                            {p.quantity} {p.unit}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-left">
-                                          <div className="flex justify-start items-center gap-1">
-                                            <Button 
-                                              variant="ghost" 
-                                              size="icon" 
-                                              title="Update Stock" 
-                                              onClick={() => openStockUpdate(p)} 
-                                              className="hover:bg-primary/10 group h-8 w-8"
-                                            >
-                                              <Package className="h-4 w-4 text-primary group-hover:text-primary transition-colors" />
-                                            </Button>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="icon" 
-                                              title="Edit Product" 
-                                              onClick={() => openEditProduct(p)}
-                                              className="h-8 w-8"
-                                            >
-                                              <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="icon" 
-                                              title="Delete Product" 
-                                              className="h-8 w-8 hover:bg-destructive/10" 
-                                              onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}
-                                            >
-                                              <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
+                  <TabsContent value="inventory" className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-2xl font-bold font-headline">Yield Inventory</h3>
+                        <p className="text-sm text-muted-foreground">Managed grouped by source farm.</p>
+                      </div>
+                      <Button onClick={() => { setEditingProduct(null); setProductFormData({ name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: farms[0]?.id || "" }); setIsProductDialogOpen(true); }} disabled={farms.length === 0} className="gap-2 font-bold"><Plus className="h-4 w-4" /> Add Yield</Button>
+                    </div>
+
+                    {isProductsLoading ? (
+                      <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : products.length === 0 ? (
+                      <Card className="text-center py-20 border-2 border-dashed">
+                        <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <h4 className="text-lg font-bold">No Yields Listed</h4>
+                        <p className="text-sm text-muted-foreground">Start adding products to your farm storefronts.</p>
+                      </Card>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-8">
+                        {Object.entries(groupedProducts).map(([farmName, farmProducts]) => (
+                          <Card key={farmName} className="shadow-sm border-t-2 border-t-primary/20">
+                            <CardHeader className="py-4 px-6 bg-muted/20">
+                              <div className="flex items-center gap-2">
+                                <Store className="h-5 w-5 text-primary" />
+                                <CardTitle className="text-lg text-primary">{farmName}</CardTitle>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-muted/5">
+                                    <TableHead className="text-left w-[80px]">Image</TableHead>
+                                    <TableHead className="text-left">Yield</TableHead>
+                                    <TableHead className="text-left">Price</TableHead>
+                                    <TableHead className="text-left">Stock</TableHead>
+                                    <TableHead className="text-left w-[140px]">Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {farmProducts.map(p => (
+                                    <TableRow key={p.id} className="hover:bg-muted/5 transition-colors">
+                                      <TableCell>
+                                        <div className="relative h-12 w-12 rounded-md overflow-hidden border bg-muted flex-shrink-0">
+                                          {resolveImageUrl(p.imageUrl || p.image) ? (
+                                            <Image 
+                                              src={resolveImageUrl(p.imageUrl || p.image)!} 
+                                              alt={p.name} 
+                                              fill 
+                                              className="object-cover" 
+                                              unoptimized 
+                                            />
+                                          ) : (
+                                            <div className="flex items-center justify-center h-full w-full">
+                                              <Package className="h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="font-bold text-left">{p.name}</TableCell>
+                                      <TableCell className="text-left font-medium">₹{p.price}/{p.unit}</TableCell>
+                                      <TableCell className="text-left">
+                                        <Badge variant={p.quantity < 10 ? "destructive" : "secondary"} className="rounded-sm px-2 font-bold">
+                                          {p.quantity} {p.unit}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-left">
+                                        <div className="flex justify-start items-center gap-1">
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            title="Update Stock" 
+                                            onClick={() => openStockUpdate(p)} 
+                                            className="hover:bg-primary/10 group h-9 w-9"
+                                          >
+                                            <Package className="h-4.5 w-4.5 text-primary group-hover:text-primary transition-colors" />
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            title="Edit Product" 
+                                            onClick={() => openEditProduct(p)}
+                                            className="h-9 w-9 hover:bg-muted"
+                                          >
+                                            <Pencil className="h-4 w-4" />
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            title="Delete Product" 
+                                            className="h-9 w-9 hover:bg-destructive/10" 
+                                            onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}
+                                          >
+                                            <Trash2 className="h-4.5 w-4.5 text-destructive" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </TabsContent>
                 </>
               )}
@@ -1111,7 +1115,7 @@ export default function DashboardPage() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
-                                  onClick={() => handleSetDefaultAddress(id)}
+                                  onClick={() => handleSetDefaultAddress(addr.id)}
                                 >
                                   Set Default
                                 </Button>
