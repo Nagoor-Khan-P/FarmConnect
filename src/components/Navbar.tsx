@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -155,9 +154,9 @@ export function Navbar() {
             </Popover>
           )}
           
-          <Link href={isAuthenticated ? "/dashboard?tab=wishlist" : "/auth/login?redirect=dashboard"}>
+          <Link href={isAuthenticated ? "/wishlist" : "/auth/login?redirect=/wishlist"}>
             <Button variant="ghost" size="icon" className="relative shrink-0">
-              <Heart className={cn("h-5 w-5", pathname === "/dashboard" && "text-destructive")} />
+              <Heart className={cn("h-5 w-5", pathname === "/wishlist" && "text-destructive fill-destructive")} />
               {mounted && wishlistCount > 0 && (
                 <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-bold flex items-center justify-center text-white">
                   {wishlistCount}

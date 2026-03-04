@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -65,7 +64,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
-import { useWishlist } from "@/context/WishlistContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
@@ -84,7 +82,6 @@ const resolveImageUrl = (path: string | null | undefined) => {
 
 export default function DashboardPage() {
   const { user: authUser, token, logout, isAuthenticated, updateUser } = useAuth();
-  const { wishlist, removeFromWishlist, moveToCart, isLoading: isWishlistLoading } = useWishlist();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -621,27 +618,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleMoveToCart = async (wishlistItemId: string, name: string) => {
-    try {
-      await moveToCart(wishlistItemId);
-      toast({
-        title: "Moved to Basket",
-        description: `${name} is now in your shopping basket.`,
-      });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to move item to basket." });
-    }
-  };
-
-  const handleRemoveFromWishlist = async (wishlistItemId: string) => {
-    try {
-      await removeFromWishlist(wishlistItemId);
-      toast({ title: "Removed from Wishlist" });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to remove item." });
-    }
-  };
-
   const openEditFarm = (farm: any) => {
     setEditingFarm(farm);
     setFarmFormData({
@@ -747,7 +723,6 @@ export default function DashboardPage() {
                   <>
                     <TabsTrigger value="active-orders" className="gap-2"><Clock className="h-4 w-4" /> Active Orders</TabsTrigger>
                     <TabsTrigger value="order-history" className="gap-2"><History className="h-4 w-4" /> History</TabsTrigger>
-                    <TabsTrigger value="wishlist" className="gap-2"><Heart className="h-4 w-4" /> Wishlist</TabsTrigger>
                   </>
                 )}
                 <TabsTrigger value="profile" className="gap-2"><Shield className="h-4 w-4" /> Profile</TabsTrigger>
@@ -809,65 +784,6 @@ export default function DashboardPage() {
                           </div>
                         ) : (
                           <OrderTable orders={historyOrders} />
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="wishlist">
-                    <Card className="shadow-sm">
-                      <CardHeader>
-                        <CardTitle>My Wishlist</CardTitle>
-                        <CardDescription>Fresh items you've saved for later.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {isWishlistLoading ? (
-                          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : wishlist.length === 0 ? (
-                          <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                            <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">Your wishlist is empty.</p>
-                            <Button asChild className="mt-4"><Link href="/explore">Explore Harvest</Link></Button>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {wishlist.map((item) => (
-                              <Card key={item.id} className="overflow-hidden bg-card/50 flex flex-col h-full border-primary/10">
-                                <div className="relative aspect-[4/3]">
-                                  <Image 
-                                    src={resolveImageUrl(item.image) || `https://picsum.photos/seed/${item.productId}/400/300`} 
-                                    alt={item.name} 
-                                    fill 
-                                    className="object-cover"
-                                    unoptimized
-                                  />
-                                </div>
-                                <CardHeader className="p-4 pb-2">
-                                  <CardTitle className="text-lg">{item.name}</CardTitle>
-                                  <CardDescription className="text-xs">{item.farmName}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-0 flex-grow">
-                                  <p className="font-bold text-primary">₹{item.price.toFixed(2)} / {item.unit}</p>
-                                </CardContent>
-                                <CardFooter className="p-4 pt-0 flex flex-col gap-2">
-                                  <Button 
-                                    className="w-full gap-2 font-bold"
-                                    onClick={() => handleMoveToCart(item.id, item.name)}
-                                  >
-                                    <ShoppingBag className="h-4 w-4" /> Move to Basket
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="w-full text-destructive hover:bg-destructive/10 gap-1.5"
-                                    onClick={() => handleRemoveFromWishlist(item.id)}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" /> Remove
-                                  </Button>
-                                </CardFooter>
-                              </Card>
-                            ))}
-                          </div>
                         )}
                       </CardContent>
                     </Card>
