@@ -638,7 +638,7 @@ export default function DashboardPage() {
       category: product.category,
       unit: product.unit,
       quantity: product.quantity,
-      farmId: product.farm?.id || product.farmId || ""
+      farmId: product.farmId || ""
     });
     setIsProductDialogOpen(true);
   };
@@ -648,16 +648,6 @@ export default function DashboardPage() {
     setNewStockValue(product.quantity || 0);
     setIsStockDialogOpen(true);
   };
-
-  // Memoize grouped products for the Inventory tab
-  const groupedProducts = useMemo(() => {
-    return products.reduce((acc, product) => {
-      const farmName = product.farmName || "Unassigned Yields";
-      if (!acc[farmName]) acc[farmName] = [];
-      acc[farmName].push(product);
-      return acc;
-    }, {} as Record<string, any[]>);
-  }, [products]);
 
   if (!authUser) return null;
 
@@ -866,7 +856,7 @@ export default function DashboardPage() {
                                     <Home className="h-2.5 w-2.5" /> Full Address
                                   </p>
                                   <p className="truncate">
-                                    {farm.address.street}, {farm.address.city}, {farm.address.state} {farm.address.zipCode}
+                                    {farm.address.street}, {farm.address.city}, {farm.address.state} {farm.address.zipCode}, {farm.address.country || "India"}
                                   </p>
                                 </div>
                               )}
@@ -899,7 +889,7 @@ export default function DashboardPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-2xl font-bold font-headline">Yield Inventory</h3>
-                        <p className="text-sm text-muted-foreground">Managed grouped by source farm.</p>
+                        <p className="text-sm text-muted-foreground">Manage all your products in one list.</p>
                       </div>
                       <Button onClick={() => { setEditingProduct(null); setProductFormData({ name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: farms[0]?.id || "" }); setIsProductDialogOpen(true); }} disabled={farms.length === 0} className="gap-2 font-bold"><Plus className="h-4 w-4" /> Add Yield</Button>
                     </div>
@@ -913,92 +903,84 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">Start adding products to your farm storefronts.</p>
                       </Card>
                     ) : (
-                      <div className="grid grid-cols-1 gap-8">
-                        {Object.entries(groupedProducts).map(([farmName, farmProducts]) => (
-                          <Card key={farmName} className="shadow-sm border-t-2 border-t-primary/20">
-                            <CardHeader className="py-4 px-6 bg-muted/20">
-                              <div className="flex items-center gap-2">
-                                <Store className="h-5 w-5 text-primary" />
-                                <CardTitle className="text-lg text-primary">{farmName}</CardTitle>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="bg-muted/5">
-                                    <TableHead className="text-left w-[80px]">Image</TableHead>
-                                    <TableHead className="text-left">Yield</TableHead>
-                                    <TableHead className="text-left">Price</TableHead>
-                                    <TableHead className="text-left">Stock</TableHead>
-                                    <TableHead className="text-left w-[140px]">Actions</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {farmProducts.map(p => (
-                                    <TableRow key={p.id} className="hover:bg-muted/5 transition-colors">
-                                      <TableCell>
-                                        <div className="relative h-12 w-12 rounded-md overflow-hidden border bg-muted flex-shrink-0">
-                                          {resolveImageUrl(p.imageUrl || p.image) ? (
-                                            <Image 
-                                              src={resolveImageUrl(p.imageUrl || p.image)!} 
-                                              alt={p.name} 
-                                              fill 
-                                              className="object-cover" 
-                                              unoptimized 
-                                            />
-                                          ) : (
-                                            <div className="flex items-center justify-center h-full w-full">
-                                              <Package className="h-4 w-4 text-muted-foreground" />
-                                            </div>
-                                          )}
+                      <Card className="shadow-sm border-t-2 border-t-primary/20">
+                        <CardContent className="p-0">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/5">
+                                <TableHead className="text-left w-[80px]">Image</TableHead>
+                                <TableHead className="text-left">Yield</TableHead>
+                                <TableHead className="text-left">Farm</TableHead>
+                                <TableHead className="text-left">Price</TableHead>
+                                <TableHead className="text-left">Stock</TableHead>
+                                <TableHead className="text-left w-[140px]">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {products.map(p => (
+                                <TableRow key={p.id} className="hover:bg-muted/5 transition-colors">
+                                  <TableCell>
+                                    <div className="relative h-12 w-12 rounded-md overflow-hidden border bg-muted flex-shrink-0">
+                                      {resolveImageUrl(p.imageUrl || p.image) ? (
+                                        <Image 
+                                          src={resolveImageUrl(p.imageUrl || p.image)!} 
+                                          alt={p.name} 
+                                          fill 
+                                          className="object-cover" 
+                                          unoptimized 
+                                        />
+                                      ) : (
+                                        <div className="flex items-center justify-center h-full w-full">
+                                          <Package className="h-4 w-4 text-muted-foreground" />
                                         </div>
-                                      </TableCell>
-                                      <TableCell className="font-bold text-left">{p.name}</TableCell>
-                                      <TableCell className="text-left font-medium">₹{p.price}/{p.unit}</TableCell>
-                                      <TableCell className="text-left">
-                                        <Badge variant={p.quantity < 10 ? "destructive" : "secondary"} className="rounded-sm px-2 font-bold">
-                                          {p.quantity} {p.unit}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell className="text-left">
-                                        <div className="flex justify-start items-center gap-1">
-                                          <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            title="Update Stock" 
-                                            onClick={() => openStockUpdate(p)} 
-                                            className="hover:bg-primary/10 group h-9 w-9"
-                                          >
-                                            <Package className="h-4.5 w-4.5 text-primary group-hover:text-primary transition-colors" />
-                                          </Button>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            title="Edit Product" 
-                                            onClick={() => openEditProduct(p)}
-                                            className="h-9 w-9 hover:bg-muted"
-                                          >
-                                            <Pencil className="h-4 w-4" />
-                                          </Button>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            title="Delete Product" 
-                                            className="h-9 w-9 hover:bg-destructive/10" 
-                                            onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}
-                                          >
-                                            <Trash2 className="h-4.5 w-4.5 text-destructive" />
-                                          </Button>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-bold text-left">{p.name}</TableCell>
+                                  <TableCell className="text-left italic text-muted-foreground">{p.farmName || "Unassigned"}</TableCell>
+                                  <TableCell className="text-left font-medium">₹{p.price}/{p.unit}</TableCell>
+                                  <TableCell className="text-left">
+                                    <Badge variant={p.quantity < 10 ? "destructive" : "secondary"} className="rounded-sm px-2 font-bold">
+                                      {p.quantity} {p.unit}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-left">
+                                    <div className="flex justify-start items-center gap-1">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        title="Update Stock" 
+                                        onClick={() => openStockUpdate(p)} 
+                                        className="hover:bg-primary/10 group h-9 w-9"
+                                      >
+                                        <Package className="h-4.5 w-4.5 text-primary group-hover:text-primary transition-colors" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        title="Edit Product" 
+                                        onClick={() => openEditProduct(p)}
+                                        className="h-9 w-9 hover:bg-muted"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        title="Delete Product" 
+                                        className="h-9 w-9 hover:bg-destructive/10" 
+                                        onClick={() => { setProductToDelete(p); setIsDeleteConfirmOpen(true); }}
+                                      >
+                                        <Trash2 className="h-4.5 w-4.5 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </Card>
                     )}
                   </TabsContent>
                 </>
@@ -1087,7 +1069,7 @@ export default function DashboardPage() {
                               </div>
                               <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
                               <p className="text-xs font-bold text-primary flex items-center gap-1 mt-2 uppercase tracking-wide">
-                                <Globe className="h-3 w-3" /> {addr.country}
+                                <Globe className="h-3 w-3" /> {addr.country || "India"}
                               </p>
                             </CardContent>
                             <Separator />
@@ -1479,8 +1461,8 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
       <TableBody>
         {orders.map((order) => (
           <TableRow key={order.id}>
-            <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
-            <TableCell className="text-xs">
+            <TableCell className="font-mono text-xs text-left">{order.id.substring(0, 8)}</TableCell>
+            <TableCell className="text-xs text-left">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 {order.orderDate ? format(new Date(order.orderDate), 'MMM dd, yyyy') : "N/A"}
@@ -1495,13 +1477,13 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
                 ))}
               </div>
             </TableCell>
-            <TableCell className="font-bold text-primary">₹{order.totalPrice?.toFixed(2)}</TableCell>
-            <TableCell>
+            <TableCell className="font-bold text-primary text-left">₹{order.totalPrice?.toFixed(2)}</TableCell>
+            <TableCell className="text-left">
               <Badge variant="secondary" className="bg-primary/10 text-primary uppercase text-[10px] rounded-sm">
                 {order.status}
               </Badge>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-left">
               {onCancel && (
                 <Button 
                   variant="ghost" 
@@ -1554,7 +1536,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
               </div>
             </TableCell>
             <TableCell className="font-medium text-left">
-              <div className="flex flex-col">
+              <div className="flex flex-col text-left">
                 <span>{item.product?.name || 'Unknown Yield'}</span>
                 <span className="text-[10px] text-muted-foreground font-mono">Order Item ID: {item.id.substring(0, 8)}</span>
               </div>
