@@ -968,9 +968,9 @@ export default function DashboardPage() {
                                         size="icon" 
                                         title="Edit Product" 
                                         onClick={() => openEditProduct(p)}
-                                        className="h-9 w-9 hover:bg-muted"
+                                        className="h-9 w-9 hover:bg-muted group/edit"
                                       >
-                                        <Pencil className="h-4 w-4" />
+                                        <Pencil className="h-4 w-4 text-muted-foreground group-hover/edit:text-foreground transition-colors" />
                                       </Button>
                                       <Button 
                                         variant="ghost" 
@@ -1105,7 +1105,7 @@ export default function DashboardPage() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
-                                  onClick={() => handleSetDefaultAddress(addr.id)}
+                                  onClick={() => handleSetDefaultAddress(id)}
                                 >
                                   Set Default
                                 </Button>
