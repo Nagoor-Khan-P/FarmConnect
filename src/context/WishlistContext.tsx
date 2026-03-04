@@ -42,7 +42,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
-        setWishlist(data.map((item: any) => ({
+        // The API returns an object with an 'items' array: { id: "...", items: [...] }
+        const items = data.items || [];
+        setWishlist(items.map((item: any) => ({
           id: item.id,
           productId: item.productId,
           name: item.productName,
