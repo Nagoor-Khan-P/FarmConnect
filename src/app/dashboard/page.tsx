@@ -940,7 +940,15 @@ export default function DashboardPage() {
                                   <TableCell className="text-left italic text-muted-foreground">{p.farmName || "Unassigned"}</TableCell>
                                   <TableCell className="text-left font-medium">₹{p.price}/{p.unit}</TableCell>
                                   <TableCell className="text-left">
-                                    <Badge variant={p.quantity < 10 ? "destructive" : "secondary"} className="rounded-sm px-2 font-bold">
+                                    <Badge 
+                                      variant="secondary" 
+                                      className={cn(
+                                        "rounded-sm px-2 font-bold",
+                                        p.quantity === 0 ? "bg-red-100 text-red-700 hover:bg-red-100" : 
+                                        p.quantity < 10 ? "bg-amber-100 text-amber-700 hover:bg-amber-100" : 
+                                        "bg-green-100 text-green-700 hover:bg-green-100"
+                                      )}
+                                    >
                                       {p.quantity} {p.unit}
                                     </Badge>
                                   </TableCell>
