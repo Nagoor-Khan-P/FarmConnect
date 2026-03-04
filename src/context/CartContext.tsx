@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
@@ -21,6 +22,7 @@ type CartContextType = {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
   clearCart: () => void;
+  refreshCart: () => Promise<void>;
   cartCount: number;
   cartTotal: number;
   isLoading: boolean;
@@ -146,21 +148,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, token, fetchServerCart]);
 
   const updateQuantity = useCallback(async (id: string, delta: number) => {
-    setCart(prev => {
-      const item = prev.find(i => i.id === id);
-      if (!item) return prev;
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
 
-      if (isAuthenticated && token) {
-        if (delta === -1) {
-          fetch(`http://localhost:8080/api/cart/decrease/${id}`, {
-            method: 'POST',
-            headers: { 'Authorization': token }
-          }).then(res => { if (res.ok) fetchServerCart(); });
-        } else if (delta === 1) {
-          addToCart(item);
-        }
-        return prev;
-      } else {
+    if (isAuthenticated && token) {
+      if (delta === -1) {
+        fetch(`http://localhost:8080/api/cart/decrease/${id}`, {
+          method: 'POST',
+          headers: { 'Authorization': token }
+        }).then(res => { if (res.ok) fetchServerCart(); });
+      } else if (delta === 1) {
+        addToCart(item);
+      }
+    } else {
+      setCart(prev => {
+        const item = prev.find(i => i.id === id);
+        if (!item) return prev;
         if (delta === -1) {
           if (item.quantity === 1) {
             return prev.filter(i => i.id !== id);
@@ -170,9 +173,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         } else {
           return prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i);
         }
-      }
-    });
-  }, [isAuthenticated, token, fetchServerCart, addToCart]);
+      });
+    }
+  }, [isAuthenticated, token, fetchServerCart, addToCart, cart]);
 
   const clearCart = useCallback(async () => {
     if (isAuthenticated && token) {
@@ -201,10 +204,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     removeFromCart,
     updateQuantity,
     clearCart,
+    refreshCart: fetchServerCart,
     cartCount,
     cartTotal,
     isLoading
-  }), [cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal, isLoading]);
+  }), [cart, addToCart, removeFromCart, updateQuantity, clearCart, fetchServerCart, cartCount, cartTotal, isLoading]);
 
   return (
     <CartContext.Provider value={contextValue}>

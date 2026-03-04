@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams } from "next/navigation";
@@ -10,16 +11,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function YieldDetailPage() {
   const { id } = useParams();
   const { addToCart, cart } = useCart();
+  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [yieldItem, setYieldItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const isInCart = cart.some(item => item.productId === id || item.id === id);
+  const isWishlisted = isInWishlist(id as string);
 
   useEffect(() => {
     async function fetchDetails() {
@@ -59,6 +66,27 @@ export default function YieldDetailPage() {
       title: "Added to basket",
       description: `${yieldItem.name} has been added to your shopping basket.`,
     });
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save items to your wishlist.",
+      });
+      return;
+    }
+
+    if (isWishlisted) {
+      const item = wishlist.find(i => i.productId === id);
+      if (item) {
+        await removeFromWishlist(item.id);
+        toast({ title: "Removed from wishlist" });
+      }
+    } else {
+      await addToWishlist(id as string);
+      toast({ title: "Added to wishlist" });
+    }
   };
 
   const resolveImageUrl = (path: string) => {
@@ -125,8 +153,8 @@ export default function YieldDetailPage() {
               <h1 className="text-4xl font-bold font-headline">{yieldItem.name}</h1>
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-1 text-secondary font-bold">
-                  <Star className="h-4 w-4 fill-current" /> {yieldItem.rating || "5.0"}
-                  <span className="text-muted-foreground font-normal">({yieldItem.reviews || 0} reviews)</span>
+                  <Star className="h-4 w-4 fill-current" /> {yieldItem.averageRating || "5.0"}
+                  <span className="text-muted-foreground font-normal">({yieldItem.ratingCount || 0} reviews)</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
                   <Store className="h-4 w-4 text-primary" />
@@ -172,8 +200,13 @@ export default function YieldDetailPage() {
                   <ShoppingBag className="h-5 w-5" /> Add to Basket
                 </Button>
               )}
-              <Button size="lg" variant="outline" className="h-14 w-14 p-0">
-                <Heart className="h-6 w-6" />
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className={cn("h-14 w-14 p-0 transition-colors", isWishlisted && "border-destructive text-destructive")}
+                onClick={handleToggleWishlist}
+              >
+                <Heart className={cn("h-6 w-6", isWishlisted && "fill-current")} />
               </Button>
             </div>
 

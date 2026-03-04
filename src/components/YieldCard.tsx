@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -5,9 +6,12 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Star, MapPin, Check, Store, User } from "lucide-react";
+import { ShoppingBag, Star, MapPin, Check, Store, User, Heart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface YieldCardProps {
   id: string;
@@ -37,9 +41,12 @@ export function YieldCard({
   imageHint
 }: YieldCardProps) {
   const { addToCart, cart } = useCart();
+  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
   const isInCart = cart.some(item => item.productId === id || item.id === id);
+  const isWishlisted = isInWishlist(id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -59,6 +66,30 @@ export function YieldCard({
     });
   };
 
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save items to your wishlist.",
+      });
+      return;
+    }
+
+    if (isWishlisted) {
+      const item = wishlist.find(i => i.productId === id);
+      if (item) {
+        await removeFromWishlist(item.id);
+        toast({ title: "Removed from wishlist" });
+      }
+    } else {
+      await addToWishlist(id);
+      toast({ title: "Added to wishlist" });
+    }
+  };
+
   const imageSrc = (function() {
     if (!image) return `https://picsum.photos/seed/${id}/400/300`;
     if (image.startsWith('http') || image.startsWith('data:')) return image;
@@ -68,8 +99,8 @@ export function YieldCard({
 
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-card/50 flex flex-col h-full">
-      <Link href={`/yields/${id}`}>
-        <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <Link href={`/yields/${id}`}>
           <Image
             src={imageSrc}
             alt={name}
@@ -78,11 +109,22 @@ export function YieldCard({
             data-ai-hint={imageHint}
             unoptimized
           />
-          <Badge className="absolute top-2 left-2 bg-secondary text-secondary-foreground rounded-sm">
-            {category}
-          </Badge>
-        </div>
-      </Link>
+        </Link>
+        <Badge className="absolute top-2 left-2 bg-secondary text-secondary-foreground rounded-sm">
+          {category}
+        </Badge>
+        <Button
+          variant="secondary"
+          size="icon"
+          className={cn(
+            "absolute top-2 right-2 rounded-full shadow-md transition-colors",
+            isWishlisted ? "bg-white text-destructive hover:bg-white" : "bg-white/80 hover:bg-white text-muted-foreground"
+          )}
+          onClick={handleToggleWishlist}
+        >
+          <Heart className={cn("h-4 w-4", isWishlisted && "fill-current")} />
+        </Button>
+      </div>
       <CardHeader className="p-4 pb-0">
         <div className="flex justify-between items-start gap-2">
           <Link href={`/yields/${id}`}>

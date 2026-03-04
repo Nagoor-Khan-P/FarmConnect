@@ -2,6 +2,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
+import { WishlistProvider } from '@/context/WishlistContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -25,8 +26,10 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground min-h-screen">
         <AuthProvider>
           <CartProvider>
-            {children}
-            <Toaster />
+            <WishlistProvider>
+              {children}
+              <Toaster />
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </body>

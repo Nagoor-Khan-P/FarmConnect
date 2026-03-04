@@ -1,9 +1,10 @@
+
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Leaf, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Bell, Trash2, Clock, Copy, Check } from "lucide-react";
+import { Leaf, ShoppingBag, User, Menu, LogOut, LayoutDashboard, Bell, Trash2, Clock, Copy, Check, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -20,6 +21,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -28,6 +30,7 @@ import { formatDistanceToNow } from "date-fns";
 export function Navbar() {
   const pathname = usePathname();
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const { user, isAuthenticated, logout } = useAuth();
   const { history, clearHistory } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -152,6 +155,17 @@ export function Navbar() {
             </Popover>
           )}
           
+          <Link href={isAuthenticated ? "/dashboard?tab=wishlist" : "/auth/login?redirect=dashboard"}>
+            <Button variant="ghost" size="icon" className="relative shrink-0">
+              <Heart className={cn("h-5 w-5", pathname === "/dashboard" && "text-destructive")} />
+              {mounted && wishlistCount > 0 && (
+                <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-bold flex items-center justify-center text-white">
+                  {wishlistCount}
+                </span>
+              )}
+            </Button>
+          </Link>
+
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative shrink-0">
               <ShoppingBag className={cn("h-5 w-5", pathname === "/cart" && "text-primary")} />
