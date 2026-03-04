@@ -1114,7 +1114,7 @@ export default function DashboardPage() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
-                                  onClick={() => handleSetDefaultAddress(addr.id)}
+                                  onClick={() => handleSetDefaultAddress(id)}
                                 >
                                   Set Default
                                 </Button>
@@ -1537,10 +1537,10 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
           <TableRow key={item.id}>
             <TableCell>
               <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
-                {resolveImageUrl(item.imageUrl) ? (
+                {resolveImageUrl(item.product?.imageUrl) ? (
                   <Image 
-                    src={resolveImageUrl(item.imageUrl)!} 
-                    alt={item.productName} 
+                    src={resolveImageUrl(item.product?.imageUrl)!} 
+                    alt={item.product?.name || 'Yield'} 
                     fill 
                     className="object-cover" 
                     unoptimized 
@@ -1554,25 +1554,25 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
             </TableCell>
             <TableCell className="font-medium text-left">
               <div className="flex flex-col">
-                <span>{item.productName}</span>
-                <span className="text-[10px] text-muted-foreground font-mono">ID: {item.id.substring(0, 8)}</span>
+                <span>{item.product?.name || 'Unknown Yield'}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">Order Item ID: {item.id.substring(0, 8)}</span>
               </div>
             </TableCell>
-            <TableCell className="text-left">{item.quantity} {item.unit}</TableCell>
+            <TableCell className="text-left">{item.quantity} {item.product?.unit || 'kg'}</TableCell>
             <TableCell className="font-bold text-primary text-left">₹{(item.price * item.quantity).toFixed(2)}</TableCell>
             <TableCell className="text-left">
               <Badge 
                 variant="secondary" 
                 className={cn(
                   "uppercase text-[10px] rounded-sm",
-                  item.status === 'PENDING' ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
+                  (!item.status || item.status === 'PENDING') ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
                 )}
               >
-                {item.status}
+                {item.status || 'PENDING'}
               </Badge>
             </TableCell>
             <TableCell className="text-left">
-              {item.status === 'PENDING' ? (
+              {(!item.status || item.status === 'PENDING') ? (
                 <Button 
                   size="sm" 
                   className="h-8 font-bold gap-1.5"
