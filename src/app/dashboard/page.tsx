@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/Navbar";
@@ -833,65 +834,61 @@ export default function DashboardPage() {
                         <Button onClick={() => setIsFarmDialogOpen(true)} className="mt-4">Register Farm</Button>
                       </Card>
                     ) : (
-                      <div className="grid grid-cols-1 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {farms.map((farm) => (
-                          <Card key={farm.id} className="border-t-4 border-t-primary shadow-md overflow-hidden group">
-                            <CardHeader className="flex flex-row items-start justify-between bg-primary/5">
-                              <div className="flex gap-4">
-                                <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
-                                  {resolveImageUrl(farm.imageUrl || farm.image) ? (
-                                    <Image 
-                                      src={resolveImageUrl(farm.imageUrl || farm.image)!} 
-                                      alt={farm.name} 
-                                      fill 
-                                      className="object-cover" 
-                                      unoptimized 
-                                    />
-                                  ) : (
-                                    <div className="flex items-center justify-center h-full w-full">
-                                      <Store className="h-6 w-6 text-muted-foreground" />
-                                    </div>
-                                  )}
+                          <Card key={farm.id} className="border-t-4 border-t-primary shadow-sm overflow-hidden group hover:shadow-md transition-shadow flex flex-col">
+                            <div className="relative h-32 w-full bg-muted border-b">
+                              {resolveImageUrl(farm.imageUrl || farm.image) ? (
+                                <Image 
+                                  src={resolveImageUrl(farm.imageUrl || farm.image)!} 
+                                  alt={farm.name} 
+                                  fill 
+                                  className="object-cover" 
+                                  unoptimized 
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full w-full">
+                                  <Store className="h-10 w-10 text-muted-foreground" />
                                 </div>
-                                <div>
-                                  <CardTitle className="text-2xl">{farm.name}</CardTitle>
-                                  <CardDescription className="flex items-center gap-1 mt-1">
-                                    <MapPin className="h-3 w-3" /> {farm.address?.city}, {farm.address?.state}
-                                  </CardDescription>
-                                </div>
-                              </div>
-                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="gap-1.5"
-                                  onClick={() => openEditFarm(farm)}
-                                >
-                                  <Pencil className="h-3.5 w-3.5" /> Edit
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="gap-1.5 text-destructive border-destructive/20 hover:bg-destructive hover:text-white"
-                                  onClick={() => { setFarmToDelete(farm); setIsDeleteFarmConfirmOpen(true); }}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                                </Button>
-                              </div>
+                              )}
+                            </div>
+                            <CardHeader className="p-4 flex-grow">
+                              <CardTitle className="text-xl">{farm.name}</CardTitle>
+                              <CardDescription className="flex items-center gap-1 mt-1">
+                                <MapPin className="h-3 w-3" /> {farm.address?.city}, {farm.address?.state}
+                              </CardDescription>
+                              <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{farm.description}</p>
                             </CardHeader>
-                            <CardContent className="pt-6 space-y-4">
-                              <p className="text-sm text-muted-foreground">{farm.description}</p>
-                              {farm.address && (
-                                <div className="text-sm border-t pt-4">
-                                  <p className="font-bold flex items-center gap-2 mb-1">
-                                    <MapPin className="h-4 w-4 text-primary" /> Location
+                            <CardContent className="px-4 pb-4 space-y-2">
+                               {farm.address && (
+                                <div className="text-[11px] text-muted-foreground bg-muted/30 p-2 rounded">
+                                  <p className="font-bold flex items-center gap-1 mb-0.5">
+                                    <Home className="h-2.5 w-2.5" /> Full Address
                                   </p>
-                                  <p className="text-muted-foreground">
-                                    {farm.address.street}, {farm.address.city}, {farm.address.state} {farm.address.zipCode}, {farm.address.country}
+                                  <p className="truncate">
+                                    {farm.address.street}, {farm.address.city}, {farm.address.state} {farm.address.zipCode}
                                   </p>
                                 </div>
                               )}
                             </CardContent>
+                            <CardFooter className="p-3 bg-muted/10 border-t flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 text-xs gap-1.5"
+                                onClick={() => openEditFarm(farm)}
+                              >
+                                <Pencil className="h-3 w-3" /> Edit
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 text-xs gap-1.5 text-destructive border-destructive/20 hover:bg-destructive hover:text-white"
+                                onClick={() => { setFarmToDelete(farm); setIsDeleteFarmConfirmOpen(true); }}
+                              >
+                                <Trash2 className="h-3 w-3" /> Delete
+                              </Button>
+                            </CardFooter>
                           </Card>
                         ))}
                       </div>
