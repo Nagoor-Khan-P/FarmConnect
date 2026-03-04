@@ -9,6 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   User, 
   LogOut, 
@@ -36,7 +43,8 @@ import {
   Check,
   Heart,
   ShoppingBag,
-  ArrowRight
+  ArrowRight,
+  Filter
 } from "lucide-react";
 import { 
   Dialog, 
@@ -159,6 +167,15 @@ export default function DashboardPage() {
   // Sales State (Farmer)
   const [sales, setSales] = useState<any[]>([]);
   const [isSalesLoading, setIsSalesLoading] = useState(false);
+  const [salesStatusFilter, setSalesStatusFilter] = useState<string>("ALL");
+
+  const filteredSales = useMemo(() => {
+    if (salesStatusFilter === "ALL") return sales;
+    return sales.filter(item => {
+      const status = item.status || 'PENDING';
+      return status === salesStatusFilter;
+    });
+  }, [sales, salesStatusFilter]);
 
   const isFarmer = authUser?.roles.includes('ROLE_FARMER');
 
@@ -786,25 +803,40 @@ export default function DashboardPage() {
                 <>
                   <TabsContent value="sales">
                     <Card className="shadow-sm">
-                      <CardHeader className="flex flex-row items-center justify-between">
+                      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
                           <CardTitle>My Sales</CardTitle>
                           <CardDescription>Manage incoming orders for your yields.</CardDescription>
                         </div>
-                        <Button variant="outline" size="icon" onClick={fetchMySales} disabled={isSalesLoading}>
-                          <RefreshCcw className={`h-4 w-4 ${isSalesLoading ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <div className="flex items-center gap-2 border rounded-md px-3 h-10 bg-muted/20">
+                            <Filter className="h-4 w-4 text-muted-foreground" />
+                            <Select value={salesStatusFilter} onValueChange={setSalesStatusFilter}>
+                              <SelectTrigger className="border-none bg-transparent shadow-none focus:ring-0 w-[110px] h-8 p-0">
+                                <SelectValue placeholder="All Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ALL">All Status</SelectItem>
+                                <SelectItem value="PENDING">Pending</SelectItem>
+                                <SelectItem value="SHIPPED">Shipped</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button variant="outline" size="icon" onClick={fetchMySales} disabled={isSalesLoading} className="shrink-0">
+                            <RefreshCcw className={`h-4 w-4 ${isSalesLoading ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         {isSalesLoading ? (
                           <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : sales.length === 0 ? (
+                        ) : filteredSales.length === 0 ? (
                           <div className="text-center py-12 border-2 border-dashed rounded-lg">
                             <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">No sales recorded yet. Keep growing!</p>
+                            <p className="text-muted-foreground">No sales found matching this filter.</p>
                           </div>
                         ) : (
-                          <SalesTable items={sales} onUpdateStatus={handleUpdateItemStatus} />
+                          <SalesTable items={filteredSales} onUpdateStatus={handleUpdateItemStatus} />
                         )}
                       </CardContent>
                     </Card>
@@ -1105,7 +1137,7 @@ export default function DashboardPage() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
-                                  onClick={() => handleSetDefaultAddress(id)}
+                                  onClick={() => handleSetDefaultAddress(addr.id)}
                                 >
                                   Set Default
                                 </Button>
@@ -1457,7 +1489,7 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
   return (
     <Table>
       <TableHeader>
-        <TableRow>
+        <TableRow className="bg-muted/5">
           <TableHead className="text-left">Order ID</TableHead>
           <TableHead className="text-left">Date</TableHead>
           <TableHead className="text-left">Items</TableHead>
@@ -1468,7 +1500,7 @@ function OrderTable({ orders, onCancel }: { orders: any[], onCancel?: (order: an
       </TableHeader>
       <TableBody>
         {orders.map((order) => (
-          <TableRow key={order.id}>
+          <TableRow key={order.id} className="hover:bg-muted/5 transition-colors">
             <TableCell className="font-mono text-xs text-left">{order.id.substring(0, 8)}</TableCell>
             <TableCell className="text-xs text-left">
               <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -1514,7 +1546,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
   return (
     <Table>
       <TableHeader>
-        <TableRow>
+        <TableRow className="bg-muted/5">
           <TableHead className="text-left w-[80px]">Image</TableHead>
           <TableHead className="text-left">Item</TableHead>
           <TableHead className="text-left">Quantity</TableHead>
@@ -1525,7 +1557,7 @@ function SalesTable({ items, onUpdateStatus }: { items: any[], onUpdateStatus: (
       </TableHeader>
       <TableBody>
         {items.map((item) => (
-          <TableRow key={item.id}>
+          <TableRow key={item.id} className="hover:bg-muted/5 transition-colors">
             <TableCell>
               <div className="relative h-10 w-10 rounded overflow-hidden border bg-muted flex-shrink-0">
                 {resolveImageUrl(item.product?.imageUrl) ? (
