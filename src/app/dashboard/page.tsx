@@ -139,6 +139,12 @@ export default function DashboardPage() {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [inventoryFarmFilter, setInventoryFarmFilter] = useState<string>("ALL");
+
+  const filteredInventory = useMemo(() => {
+    if (inventoryFarmFilter === "ALL") return products;
+    return products.filter(p => p.farmId === inventoryFarmFilter);
+  }, [products, inventoryFarmFilter]);
 
   // Stock Update State
   const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
@@ -918,17 +924,39 @@ export default function DashboardPage() {
                   </TabsContent>
                   
                   <TabsContent value="inventory" className="space-y-6">
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                       <div>
                         <h3 className="text-2xl font-bold font-headline">Yield Inventory</h3>
                         <p className="text-sm text-muted-foreground">Manage all your products in one list.</p>
                       </div>
-                      <Button onClick={() => { setEditingProduct(null); setProductFormData({ name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: farms[0]?.id || "" }); setIsProductDialogOpen(true); }} disabled={farms.length === 0} className="gap-2 font-bold"><Plus className="h-4 w-4" /> Add Yield</Button>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 border rounded-md px-3 h-10 bg-muted/20">
+                          <Filter className="h-4 w-4 text-muted-foreground" />
+                          <Select value={inventoryFarmFilter} onValueChange={setInventoryFarmFilter}>
+                            <SelectTrigger className="border-none bg-transparent shadow-none focus:ring-0 w-[150px] h-8 p-0">
+                              <SelectValue placeholder="All Farms" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ALL">All Farms</SelectItem>
+                              {farms.map(farm => (
+                                <SelectItem key={farm.id} value={farm.id}>{farm.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          onClick={() => { setEditingProduct(null); setProductFormData({ name: "", description: "", price: 0, category: "Vegetables", unit: "kg", quantity: 10, farmId: farms[0]?.id || "" }); setIsProductDialogOpen(true); }} 
+                          disabled={farms.length === 0} 
+                          className="gap-2 font-bold whitespace-nowrap"
+                        >
+                          <Plus className="h-4 w-4" /> Add Yield
+                        </Button>
+                      </div>
                     </div>
 
                     {isProductsLoading ? (
                       <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                    ) : products.length === 0 ? (
+                    ) : filteredInventory.length === 0 ? (
                       <Card className="text-center py-20 border-2 border-dashed">
                         <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                         <h4 className="text-lg font-bold">No Yields Listed</h4>
@@ -949,7 +977,7 @@ export default function DashboardPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {products.map(p => (
+                              {filteredInventory.map(p => (
                                 <TableRow key={p.id} className="hover:bg-muted/5 transition-colors">
                                   <TableCell>
                                     <div className="relative h-12 w-12 rounded-md overflow-hidden border bg-muted flex-shrink-0">
@@ -1137,7 +1165,7 @@ export default function DashboardPage() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 text-xs font-bold border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
-                                  onClick={() => handleSetDefaultAddress(addr.id)}
+                                  onClick={() => handleSetDefaultAddress(id)}
                                 >
                                   Set Default
                                 </Button>
